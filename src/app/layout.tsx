@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Share_Tech_Mono, Orbitron } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const shareTechMono = Share_Tech_Mono({
@@ -22,7 +23,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${shareTechMono.variable} ${orbitron.variable}`}>
-      <body className="min-h-screen bg-[#000000] antialiased">{children}</body>
+      <body className="min-h-screen bg-[#000000] antialiased">
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
