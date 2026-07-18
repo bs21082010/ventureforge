@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MicroscopeIcon, AlertTriangleIcon } from "@/components/ui/icons";
 import StudioGuide from "@/components/studio/studio-guide";
 
 const STEPS = [
@@ -130,7 +131,7 @@ export default function ResearchHubPage() {
       {toast && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg z-50">{toast}</div>}
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-2xl shadow-lg">🔬</div>
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg text-white"><MicroscopeIcon size={24} /></div>
         <div>
           <p className="text-xs text-blue-400 uppercase tracking-[0.2em] font-share-tech-mono">Creation Studio</p>
           <h1 className="text-2xl font-bold text-gray-100">Research Hub</h1>
@@ -189,7 +190,7 @@ export default function ResearchHubPage() {
             </Card>
             <Card>
               <CardHeader><CardTitle className="text-sm text-gray-100">Risks</CardTitle></CardHeader>
-              <CardContent><ul className="space-y-1">{result.risks.map((r, i) => <li key={i} className="text-sm text-gray-300 flex gap-2"><span className="text-red-400">⚠</span>{r}</li>)}</ul></CardContent>
+              <CardContent><ul className="space-y-1">{result.risks.map((r, i) => <li key={i} className="text-sm text-gray-300 flex gap-2"><span className="text-red-400"><AlertTriangleIcon size={14} /></span>{r}</li>)}</ul></CardContent>
             </Card>
           </div>
 

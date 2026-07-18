@@ -3,14 +3,16 @@
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { GamepadIcon, GlobeIcon, SmartphoneIcon, MicroscopeIcon, RocketIcon } from "@/components/ui/icons";
+import type { ComponentType } from "react";
 
 export default function StudioHubPage() {
-  const studios = [
-    { id: "game", title: "Game Studio", desc: "Create playable HTML5 games from any idea", emoji: "🎮", color: "from-purple-600 to-pink-500" },
-    { id: "website", title: "Website Builder", desc: "Generate full websites with Next.js & Tailwind", emoji: "🌐", color: "from-blue-600 to-cyan-500" },
-    { id: "app", title: "App Builder", desc: "Build React Native / Expo mobile apps", emoji: "📱", color: "from-green-600 to-emerald-500" },
-    { id: "research", title: "Research Hub", desc: "Deep-dive into any market or industry", emoji: "🔬", color: "from-yellow-500 to-orange-500" },
-    { id: "business", title: "Business Builder", desc: "Business plans + websites + apps — all in one", emoji: "🚀", color: "from-red-600 to-rose-500" },
+  const studios: { id: string; title: string; desc: string; icon: ComponentType<{ size?: number }>; color: string }[] = [
+    { id: "game", title: "Game Studio", desc: "Create playable HTML5 games from any idea", icon: GamepadIcon, color: "from-purple-600 to-pink-500" },
+    { id: "website", title: "Website Builder", desc: "Generate full websites with Next.js & Tailwind", icon: GlobeIcon, color: "from-blue-600 to-cyan-500" },
+    { id: "app", title: "App Builder", desc: "Build React Native / Expo mobile apps", icon: SmartphoneIcon, color: "from-green-600 to-emerald-500" },
+    { id: "research", title: "Research Hub", desc: "Deep-dive into any market or industry", icon: MicroscopeIcon, color: "from-yellow-500 to-orange-500" },
+    { id: "business", title: "Business Builder", desc: "Business plans + websites + apps — all in one", icon: RocketIcon, color: "from-red-600 to-rose-500" },
   ];
 
   const container = {
@@ -46,8 +48,8 @@ export default function StudioHubPage() {
             <a href={`/studio/${s.id}`}>
               <Card animated className="group cursor-pointer hover:-translate-y-1 transition-all duration-200 h-full">
                 <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className={`text-4xl w-16 h-16 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-lg`}>
-                    <span className="text-3xl">{s.emoji}</span>
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-lg text-white`}>
+                    <s.icon size={32} />
                   </div>
                   <CardTitle className="text-lg text-gray-100">{s.title}</CardTitle>
                   <p className="text-sm text-gray-400">{s.desc}</p>

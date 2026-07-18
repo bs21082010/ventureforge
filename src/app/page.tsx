@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { BarChartIcon, LinkIcon, MapPinIcon, RobotIcon, ShieldIcon, UsersIcon } from "@/components/ui/icons";
 
 const FEATURES = [
-  { rank: "01", title: "Financial Engine", desc: "Real-time recalculation of financial projections.", emoji: "📊" },
-  { rank: "02", title: "Data Backbone", desc: "Government, economic, and industry data with blockchain verification.", emoji: "🔗" },
-  { rank: "03", title: "Market Intelligence", desc: "Geospatial data and regional indicators for location-aware plans.", emoji: "📍" },
-  { rank: "04", title: "Explainable AI", desc: "AI suggestions with citations and confidence scores.", emoji: "🤖" },
-  { rank: "05", title: "Compliance Shield", desc: "Cross-jurisdiction checks for legal and financial regulations.", emoji: "🛡️" },
-  { rank: "06", title: "Collaboration Hub", desc: "Multi-user editing and blockchain certification.", emoji: "👥" },
+  { rank: "01", title: "Financial Engine", desc: "Real-time recalculation of financial projections.", icon: BarChartIcon },
+  { rank: "02", title: "Data Backbone", desc: "Government, economic, and industry data with blockchain verification.", icon: LinkIcon },
+  { rank: "03", title: "Market Intelligence", desc: "Geospatial data and regional indicators for location-aware plans.", icon: MapPinIcon },
+  { rank: "04", title: "Explainable AI", desc: "AI suggestions with citations and confidence scores.", icon: RobotIcon },
+  { rank: "05", title: "Compliance Shield", desc: "Cross-jurisdiction checks for legal and financial regulations.", icon: ShieldIcon },
+  { rank: "06", title: "Collaboration Hub", desc: "Multi-user editing and blockchain certification.", icon: UsersIcon },
 ];
 
 export default function HomePage() {
@@ -141,7 +142,7 @@ export default function HomePage() {
               className="group relative border border-blue-500/10 bg-[#121212] p-6 transition-all duration-300 hover:border-blue-400/40 hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] corner-box corner-box-bottom"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="text-3xl">{f.emoji}</div>
+                <div className="text-blue-400"><f.icon size={28} /></div>
                 <span className="font-orbitron text-xs text-blue-400/40 border border-blue-500/20 px-2 py-1">
                   {f.rank}
                 </span>

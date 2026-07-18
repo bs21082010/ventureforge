@@ -9,7 +9,9 @@ import { AssumptionsPanel } from "@/components/financial/assumptions-panel";
 import { ProjectionTable } from "@/components/financial/projection-table";
 import { useFinancialStore } from "@/store/financial-store";
 import { formatCurrency } from "@/lib/utils";
+import { ClipboardIcon, BarChartIcon, LightbulbIcon, MegaphoneIcon, SettingsIcon, DollarSignIcon, AlertTriangleIcon, UsersIcon, FileTextIcon } from "@/components/ui/icons";
 import type { Assumption } from "@/types/plan";
+import type { ComponentType } from "react";
 
 const MOCK_PLAN_META: Record<string, { title: string; description: string; industry: string; region: string; status: string; version: number }> = {
   plan_1: { title: "TechVenture - AI-Powered Analytics Platform", description: "B2B SaaS platform providing AI-driven business intelligence for mid-market companies.", industry: "Technology", region: "mumbai", status: "IN_REVIEW", version: 2 },
@@ -28,15 +30,15 @@ const FALLBACK_ASSUMPTIONS: Assumption[] = [
   { id: "a8", category: "INFLATION", name: "GROSS_MARGIN", value: 60, isDynamic: false },
 ];
 
-const FALLBACK_SECTIONS = [
-  { type: "EXECUTIVE_SUMMARY", title: "Executive Summary", icon: "📋", defaultContent: "This business plan outlines our venture, a technology company positioned for rapid growth in the AI analytics space." },
-  { type: "MARKET_ANALYSIS", title: "Market Analysis", icon: "📊", defaultContent: "The global business intelligence market is projected to reach $54B by 2030, growing at 8.5% CAGR." },
-  { type: "PRODUCT_DESCRIPTION", title: "Product Description", icon: "💡", defaultContent: "AI-powered analytics platform that transforms raw business data into actionable insights in real-time." },
-  { type: "MARKETING_STRATEGY", title: "Marketing Strategy", icon: "📣", defaultContent: "Developer-first go-to-market: content marketing, open-source SDKs, conference sponsorships, and community building." },
-  { type: "OPERATIONS_PLAN", title: "Operations Plan", icon: "⚙️", defaultContent: "Cloud-native infrastructure on AWS, CI/CD pipelines, 2-week sprint cycles, remote-first team." },
-  { type: "FINANCIAL_PLAN", title: "Financial Plan", icon: "💰", defaultContent: "Seeking $2M seed round. Break-even in 18 months. Projected $5M ARR by Year 3." },
-  { type: "RISK_ASSESSMENT", title: "Risk Assessment", icon: "⚠️", defaultContent: "Key risks: market competition, data privacy regulations, talent retention. Mitigations: differentiation, compliance-first design, competitive equity packages." },
-  { type: "TEAM_ORGANIZATION", title: "Team & Organization", icon: "👥", defaultContent: "Core team of 8: CEO, CTO, 3 engineers, designer, growth lead, operations manager." },
+const FALLBACK_SECTIONS: { type: string; title: string; icon: ComponentType<{ size?: number }>; defaultContent: string }[] = [
+  { type: "EXECUTIVE_SUMMARY", title: "Executive Summary", icon: ClipboardIcon, defaultContent: "This business plan outlines our venture, a technology company positioned for rapid growth in the AI analytics space." },
+  { type: "MARKET_ANALYSIS", title: "Market Analysis", icon: BarChartIcon, defaultContent: "The global business intelligence market is projected to reach $54B by 2030, growing at 8.5% CAGR." },
+  { type: "PRODUCT_DESCRIPTION", title: "Product Description", icon: LightbulbIcon, defaultContent: "AI-powered analytics platform that transforms raw business data into actionable insights in real-time." },
+  { type: "MARKETING_STRATEGY", title: "Marketing Strategy", icon: MegaphoneIcon, defaultContent: "Developer-first go-to-market: content marketing, open-source SDKs, conference sponsorships, and community building." },
+  { type: "OPERATIONS_PLAN", title: "Operations Plan", icon: SettingsIcon, defaultContent: "Cloud-native infrastructure on AWS, CI/CD pipelines, 2-week sprint cycles, remote-first team." },
+  { type: "FINANCIAL_PLAN", title: "Financial Plan", icon: DollarSignIcon, defaultContent: "Seeking $2M seed round. Break-even in 18 months. Projected $5M ARR by Year 3." },
+  { type: "RISK_ASSESSMENT", title: "Risk Assessment", icon: AlertTriangleIcon, defaultContent: "Key risks: market competition, data privacy regulations, talent retention. Mitigations: differentiation, compliance-first design, competitive equity packages." },
+  { type: "TEAM_ORGANIZATION", title: "Team & Organization", icon: UsersIcon, defaultContent: "Core team of 8: CEO, CTO, 3 engineers, designer, growth lead, operations manager." },
 ];
 
 const STATUS_COLORS: Record<string, "success" | "warning" | "info" | "danger" | "purple"> = {
@@ -84,7 +86,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
             setSections(p.sections.map((s: any) => ({
               type: s.type,
               title: s.title,
-              icon: FALLBACK_SECTIONS.find((fs) => fs.type === s.type)?.icon || "📄",
+              icon: FALLBACK_SECTIONS.find((fs) => fs.type === s.type)?.icon || FileTextIcon,
               defaultContent: typeof s.content === "object" ? (s.content as any).text || s.content as any : s.content,
             })));
             const contentMap: Record<string, string> = {};
@@ -212,7 +214,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{section.icon}</span>
+                      <span className="text-blue-400"><section.icon size={20} /></span>
                       <CardTitle className="text-base">{section.title}</CardTitle>
                     </div>
                     {!isEditing && (
