@@ -4,13 +4,8 @@ import { generateWebsite } from "@/lib/builders/website";
 import { generateApp } from "@/lib/builders/app";
 import { researchTopic } from "@/lib/builders/research";
 import { generateBusinessBundle } from "@/lib/builders/business";
-import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   try {
     const body = await request.json();
     const { type } = body;
@@ -46,14 +41,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Builder failed";
-    const isVisionError = message.includes("does not support image");
-    return NextResponse.json(
-      {
-        error: isVisionError
-          ? "AI model unavailable. Set OPENAI_API_KEY or run Ollama with a compatible model (ollama pull llama3.2)."
-          : message,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

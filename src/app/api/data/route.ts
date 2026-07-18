@@ -3,7 +3,6 @@ import { GOVERNMENT_DATA_SOURCES, INDUSTRY_DATA_SOURCES } from "@/lib/data-backb
 import { getRegionData, getRegionsByCountry } from "@/lib/geospatial/regions";
 import { getWorldBankIndicator } from "@/lib/data-backbone/worldbank";
 import { getIMFIndicator } from "@/lib/data-backbone/imf";
-import { auth } from "@/lib/auth";
 
 const ALL_SOURCES = [...GOVERNMENT_DATA_SOURCES, ...INDUSTRY_DATA_SOURCES].map((s) => ({
   id: s.id,
@@ -15,11 +14,6 @@ const ALL_SOURCES = [...GOVERNMENT_DATA_SOURCES, ...INDUSTRY_DATA_SOURCES].map((
 }));
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const region = searchParams.get("region");
 
@@ -27,7 +21,6 @@ export async function GET(request: NextRequest) {
     const data = await getRegionData(region);
     if (!data) return NextResponse.json({ error: "Region not found" }, { status: 404 });
 
-    // Enrich with real World Bank data
     try {
       const wbGDP = await getWorldBankIndicator("NY.GDP.MKTP.CD", region, 2020, 2024);
       return NextResponse.json({ data, worldBank: wbGDP });
@@ -47,11 +40,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const body = await request.json();
     const { source, region = "IN", indicators = ["NY.GDP.MKTP.CD"], years = [2024] } = body || {};
@@ -67,7 +55,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (source === "fred") {
-      // FRED needs API key
       if (!process.env.FRED_API_KEY || process.env.FRED_API_KEY === "your-fred-api-key") {
         return NextResponse.json({
           source: "fred",
@@ -81,7 +68,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ source: "fred", data, timestamp: new Date().toISOString() });
     }
 
-    // Default: aggregate from World Bank with fallback
     const results = await Promise.allSettled(
       indicators.map((ind: string) => getWorldBankIndicator(ind, region, years[0], years[years.length - 1]))
     );
@@ -91,7 +77,6 @@ export async function POST(request: NextRequest) {
       .flatMap((r) => r.value);
 
     if (data.length === 0) {
-      // Fallback: return known static data from our regions database
       const regionData = await getRegionData(region);
       if (regionData) {
         const name = regionData.region || region;
