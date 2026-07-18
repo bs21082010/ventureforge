@@ -1,0 +1,15 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "npx prisma generate --schema=prisma/schema.prod.prisma && npx next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "env": {
+    "PRISMA_SCHEMA": "prisma/schema.prod.prisma"
+  },
+  "crons": []
+}

@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  role          String    @default("ENTREPRENEUR")
+  organization  String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  plans         Plan[]
+  auditLogs     AuditLog[]
+  subscriptions Subscription[]
+  orders        Order[]
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  industry      String
+  region        String
+  status        String   @default("DRAFT")
+  version       Int      @default(1)
+  isPublished   Boolean  @default(false)
+  certHash      String?
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id])
+  sections      PlanSection[]
+  assumptions   Assumption[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model PlanSection {
+  id          String  @id @default(cuid())
+  planId      String
+  plan        Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  content     String  @default("{}")
+  order       Int
+  createdAt   DateTime @default(now())
+
+  @@index([planId])
+}
+
+model Assumption {
+  id          String  @id @default(cuid())
+  planId      String
+  plan        Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  category    String
+  name        String
+  value       Float
+  unit        String?
+  isDynamic   Boolean @default(false)
+  dataSource  String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([planId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String
+  details     String   @default("{}")
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  stripeId        String   @unique
+  stripePriceId   String
+  status          String   @default("active")
+  plan            String   @default("free")
+  currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  stripeId        String   @unique
+  amount          Int
+  currency        String   @default("usd")
+  status          String   @default("pending")
+  planId          String?
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
