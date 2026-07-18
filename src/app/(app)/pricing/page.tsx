@@ -58,7 +58,7 @@ export default function PricingPage() {
       </Card>
 
       <div className="text-center text-sm text-muted-foreground max-w-lg mx-auto">
-        <p>VentureForge is and will remain free. If payment options become available in your region, you&apos;ll never lose access to features you already have.</p>
+        <p>VentureForge is entirely free for now. All of the features are unlocked with no caps, no credit cards, and no tricks up our sleeve. If and when we release paid plans in your region, you will have continuous free access to all that you&apos;ve enjoyed, with nothing taken from you.</p>
       </div>
     </div>
   );
