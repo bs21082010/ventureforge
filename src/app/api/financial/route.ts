@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recalculate } from "@/lib/financial-engine/engine";
+import { auth } from "@/lib/auth";
 import type { RecalculationInput } from "@/types/financial";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body: RecalculationInput = await request.json();
 

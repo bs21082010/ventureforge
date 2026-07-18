@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailableIntegrations, getAdapterByType } from "@/lib/integrations/crm";
+import { auth } from "@/lib/auth";
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const integrations = getAvailableIntegrations().map((a) => ({
     type: a.type,
     name: a.name,
@@ -14,6 +19,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const adapter = getAdapterByType(body.type);

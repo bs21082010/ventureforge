@@ -4,8 +4,13 @@ import { generateWebsite } from "@/lib/builders/website";
 import { generateApp } from "@/lib/builders/app";
 import { researchTopic } from "@/lib/builders/research";
 import { generateBusinessBundle } from "@/lib/builders/business";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const body = await request.json();
     const { type } = body;

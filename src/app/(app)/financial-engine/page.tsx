@@ -95,7 +95,6 @@ export default function FinancialEnginePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: session.user.id,
           name: modelName,
           assumptions,
           scenarios: useFinancialStore.getState().activeScenarios,

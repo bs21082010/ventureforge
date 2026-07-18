@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const models = await prisma.financialModel.findMany({
+      where: { userId: session.user.id },
       orderBy: { updatedAt: "desc" },
       take: 50,
     });
@@ -15,17 +22,22 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { userId, name, assumptions, scenarios, periodRange } = body;
+    const { name, assumptions, scenarios, periodRange } = body;
 
-    if (!userId || !name) {
-      return NextResponse.json({ error: "userId and name are required" }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "name is required" }, { status: 400 });
     }
 
     const model = await prisma.financialModel.create({
       data: {
-        userId,
+        userId: session.user.id,
         name,
         assumptions: JSON.stringify(assumptions || []),
         scenarios: JSON.stringify(scenarios || []),
@@ -41,12 +53,25 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { id, name, assumptions, scenarios, periodRange } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
+    }
+
+    const existing = await prisma.financialModel.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+    if (existing.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const model = await prisma.financialModel.update({
@@ -67,12 +92,25 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
+    }
+
+    const existing = await prisma.financialModel.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+    if (existing.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await prisma.financialModel.delete({ where: { id } });

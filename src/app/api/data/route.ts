@@ -3,6 +3,7 @@ import { GOVERNMENT_DATA_SOURCES, INDUSTRY_DATA_SOURCES } from "@/lib/data-backb
 import { getRegionData, getRegionsByCountry } from "@/lib/geospatial/regions";
 import { getWorldBankIndicator } from "@/lib/data-backbone/worldbank";
 import { getIMFIndicator } from "@/lib/data-backbone/imf";
+import { auth } from "@/lib/auth";
 
 const ALL_SOURCES = [...GOVERNMENT_DATA_SOURCES, ...INDUSTRY_DATA_SOURCES].map((s) => ({
   id: s.id,
@@ -14,6 +15,11 @@ const ALL_SOURCES = [...GOVERNMENT_DATA_SOURCES, ...INDUSTRY_DATA_SOURCES].map((
 }));
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const region = searchParams.get("region");
 
@@ -41,6 +47,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { source, region = "IN", indicators = ["NY.GDP.MKTP.CD"], years = [2024] } = body || {};
