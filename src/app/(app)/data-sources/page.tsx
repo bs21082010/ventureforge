@@ -323,7 +323,7 @@ export default function DataSourcesPage() {
             ) : (
               <p className="text-xs text-gray-500">No economic data available</p>
             )}
-            {liveData.timestamp && (
+            {typeof liveData.timestamp === 'string' && (
               <p className="mt-3 text-xs text-gray-500">Last fetched: {new Date(liveData.timestamp).toLocaleString()}</p>
             )}
           </CardContent>
