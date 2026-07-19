@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai/workflow";
 import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
 import { isGeminiSet, geminiChat } from "@/lib/ai/gemini-client";
+import { isDeepSeekSet, deepSeekChat } from "@/lib/ai/deepseek-client";
 import type {
   CreativityRequest,
   ForesightRequest,
@@ -76,7 +77,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "chat") {
-      // Try Gemini first (1M tokens/day free)
+      // Try DeepSeek first (free, strong reasoning)
+      if (isDeepSeekSet()) {
+        try {
+          const history = (body.history || []).map((m: { role: string; content: string }) => ({
+            role: m.role === "assistant" ? "assistant" as const : "user" as const,
+            content: m.content,
+          }));
+          const result = await deepSeekChat(body.message || "", CHAT_SYSTEM_PROMPT, history);
+          return NextResponse.json({ response: result });
+        } catch (err) {
+          console.error("DeepSeek chat failed, trying Gemini:", err);
+        }
+      }
+      // Try Gemini (1M tokens/day free)
       if (isGeminiSet()) {
         try {
           const history = (body.history || []).map((m: { role: string; content: string }) => ({
@@ -86,7 +100,7 @@ export async function POST(request: NextRequest) {
           const result = await geminiChat(body.message || "", CHAT_SYSTEM_PROMPT, history);
           return NextResponse.json({ response: result });
         } catch (err) {
-          console.error("Gemini chat failed, trying fallback:", err);
+          console.error("Gemini chat failed, trying Ollama/OpenAI:", err);
         }
       }
       // Fallback to Ollama/OpenAI
@@ -175,7 +189,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "creativity") {
-      const hasAI = isGeminiSet() || isApiKeySet() || await checkOllama();
+      const hasAI = isDeepSeekSet() || isGeminiSet() || isApiKeySet() || await checkOllama();
       if (hasAI) {
         try {
           const result = await generateMarketingIdeas({
@@ -222,7 +236,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: isVisionError
-          ? "The AI model is not available. Set GEMINI_API_KEY (free, 1M tokens/day at aistudio.google.com/apikey), or ensure Ollama is running locally."
+          ? "No AI available. Set DEEPSEEK_API_KEY (free at platform.deepseek.com), GEMINI_API_KEY (free at aistudio.google.com/apikey), or run Ollama locally."
           : message,
         fallback: true,
       },
