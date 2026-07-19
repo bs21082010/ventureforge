@@ -305,7 +305,7 @@ function generateDynamicFollowUp(request: CreativityRequest): CreativityResult {
     );
   } else if (isCompetitor) {
     ideas.push(
-      { title: "Competitor Weakness Exploitation", description: `Analyze top 3 competitors. Find their worst reviews, slowest features, and biggest complaints. Build marketing that highlights how you solve those exact problems.`, channels: ["Review Sites", "Social Media", "Landing Pages", "Ads"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Read 100 competitor reviews", "Identify top 5 pain points", "Create comparison landing pages", "Run "vs competitor" ads", "Track conquest conversions"] },
+      { title: "Competitor Weakness Exploitation", description: `Analyze top 3 competitors. Find their worst reviews, slowest features, and biggest complaints. Build marketing that highlights how you solve those exact problems.`, channels: ["Review Sites", "Social Media", "Landing Pages", "Ads"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Read 100 competitor reviews", "Identify top 5 pain points", "Create comparison landing pages", "Run 'vs competitor' ads", "Track conquest conversions"] },
     );
   } else if (isRetention) {
     ideas.push(
