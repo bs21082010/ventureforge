@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { CreativityWorkspace } from "@/components/ai/creativity-workspace";
 import type { ForesightResult, Trend, Risk, Opportunity } from "@/types/ai";
 
-const INDUSTRIES = ["Technology", "Finance", "Healthcare", "Education", "Retail", "Manufacturing"];
+const INDUSTRIES = [
+  "Technology", "Finance", "Healthcare", "Education", "Retail", "Manufacturing",
+  "Agriculture", "Real Estate", "Energy", "Automotive", "Food & Beverage",
+  "Telecommunications", "Media & Entertainment", "Logistics & Supply Chain",
+  "Aerospace & Defense", "Pharmaceuticals", "Insurance",
+  "Consulting & Professional Services", "Hospitality & Tourism",
+  "Mining & Metals", "Sports & Fitness", "Legal Services", "Construction",
+  "Water & Utilities",
+];
 
 export default function AISandboxPage() {
   const [activeTab, setActiveTab] = useState<"creativity" | "foresight">("creativity");
