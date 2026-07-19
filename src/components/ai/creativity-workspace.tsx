@@ -10,6 +10,7 @@ import type { CreativityRequest, CreativityResult, CreativeIdea } from "@/types/
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  type: string;
   ideas?: CreativeIdea[];
   taglines?: string[];
   nameSuggestions?: string[];
@@ -26,6 +27,10 @@ const TYPE_PLACEHOLDERS: Record<string, string> = {
   NAMING: "e.g., AI-powered legal tech startup",
 };
 
+function getStorageKey(context: string) {
+  return `ai_sandbox_chat_${context.replace(/\s+/g, "_").toLowerCase()}`;
+}
+
 export function CreativityWorkspace() {
   const [request, setRequest] = useState<CreativityRequest>({
     planId: "",
@@ -38,16 +43,54 @@ export function CreativityWorkspace() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState("");
+  const [activeView, setActiveView] = useState<string>("ideas");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
+  // Load saved chat when context changes
+  useEffect(() => {
+    if (request.context) {
+      try {
+        const saved = localStorage.getItem(getStorageKey(request.context));
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setChat(parsed);
+          if (parsed.length > 0) {
+            const lastType = parsed[parsed.length - 1].type;
+            setActiveView(lastType === "NAMING" ? "names" : lastType === "BRANDING" ? "visual" : "ideas");
+          }
+        } else {
+          setChat([]);
+        }
+      } catch { setChat([]); }
+    }
+  }, [request.context]);
+
+  // Save chat to localStorage whenever it changes
+  useEffect(() => {
+    if (request.context && chat.length > 0) {
+      try { localStorage.setItem(getStorageKey(request.context), JSON.stringify(chat)); } catch {}
+    }
+  }, [chat, request.context]);
+
   const handleTypeChange = (type: CreativityRequest["type"]) => {
     setRequest((prev) => ({ ...prev, type }));
+    if (type === "NAMING") setActiveView("names");
+    else if (type === "BRANDING") setActiveView("visual");
+    else setActiveView("ideas");
+  };
+
+  const handleNewProject = () => {
+    if (request.context) {
+      try { localStorage.removeItem(getStorageKey(request.context)); } catch {}
+    }
+    setRequest({ planId: "", type: "MARKETING", context: "", targetAudience: "", tone: "professional" });
     setChat([]);
     setError(null);
+    setActiveView("ideas");
   };
 
   const handleGenerate = async () => {
@@ -55,7 +98,7 @@ export function CreativityWorkspace() {
     setLoading(true);
     setError(null);
 
-    const userMsg: ChatMessage = { role: "user", content: request.context };
+    const userMsg: ChatMessage = { role: "user", content: request.context, type: request.type };
     setChat((prev) => [...prev, userMsg]);
 
     try {
@@ -66,21 +109,22 @@ export function CreativityWorkspace() {
       });
       const data = await response.json();
       if (!response.ok || data.error) {
-        setError(data.error || "Generation failed. Please try again.");
+        setError(data.error || "Generation failed.");
         setChat((prev) => prev.slice(0, -1));
         return;
       }
       const assistantMsg: ChatMessage = {
         role: "assistant",
         content: `Here are ${request.type.replace(/_/g, " ").toLowerCase()} ideas for your business:`,
+        type: request.type,
         ideas: data.ideas || [],
         taglines: data.taglines || [],
         nameSuggestions: data.nameSuggestions || [],
         visualSuggestions: data.visualSuggestions || [],
       };
       setChat((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      setError("Network error. Please try again.");
+    } catch {
+      setError("Network error.");
       setChat((prev) => prev.slice(0, -1));
     } finally {
       setLoading(false);
@@ -93,7 +137,7 @@ export function CreativityWorkspace() {
     setFollowUp("");
     setLoading(true);
 
-    const userMsg: ChatMessage = { role: "user", content: question };
+    const userMsg: ChatMessage = { role: "user", content: question, type: request.type };
     setChat((prev) => [...prev, userMsg]);
 
     try {
@@ -103,37 +147,53 @@ export function CreativityWorkspace() {
         body: JSON.stringify({
           action: "creativity",
           ...request,
-          context: `${request.context}\n\nFollow-up: ${question}\n\nProvide a focused, specific answer to this follow-up question. Return the same JSON format but with 3-4 targeted ideas.`,
+          context: `${request.context}\n\nPrevious response included: ${chat.filter(m => m.role === "assistant").map(m => m.ideas?.map(i => i.title).join(", ")).join("; ")}\n\nUser follow-up: ${question}\n\nGenerate DIFFERENT ideas that specifically answer this follow-up. Do NOT repeat previous ideas. Return 3-4 new targeted ideas.`,
         }),
       });
       const data = await response.json();
       if (!response.ok || data.error) {
-        setChat((prev) => [...prev, { role: "assistant", content: data.error || "Failed to generate response." }]);
+        setChat((prev) => [...prev, { role: "assistant", content: data.error || "Failed.", type: request.type }]);
       } else {
-        const assistantMsg: ChatMessage = {
+        setChat((prev) => [...prev, {
           role: "assistant",
-          content: `Here's my response to your follow-up:`,
+          content: `Here's my response to: "${question}"`,
+          type: request.type,
           ideas: data.ideas || [],
           taglines: data.taglines || [],
           nameSuggestions: data.nameSuggestions || [],
           visualSuggestions: data.visualSuggestions || [],
-        };
-        setChat((prev) => [...prev, assistantMsg]);
+        }]);
       }
     } catch {
-      setChat((prev) => [...prev, { role: "assistant", content: "Network error. Please try again." }]);
+      setChat((prev) => [...prev, { role: "assistant", content: "Network error.", type: request.type }]);
     } finally {
       setLoading(false);
     }
   };
+
+  const latestAssistant = [...chat].reverse().find((m) => m.role === "assistant");
+
+  const viewTabs = [
+    { key: "ideas", label: "Ideas", show: latestAssistant?.ideas && latestAssistant.ideas.length > 0 },
+    { key: "taglines", label: "Taglines", show: latestAssistant?.taglines && latestAssistant.taglines.length > 0 },
+    { key: "names", label: "Names", show: latestAssistant?.nameSuggestions && latestAssistant.nameSuggestions.length > 0 },
+    { key: "visual", label: "Visual", show: latestAssistant?.visualSuggestions && latestAssistant.visualSuggestions.length > 0 },
+  ].filter((v) => v.show);
 
   return (
     <div className="space-y-6">
       {/* Input Panel */}
       <Card variant="bordered">
         <CardHeader>
-          <CardTitle>AI Creativity Sandbox</CardTitle>
-          <p className="text-sm text-gray-500">Select a type, describe your business, and get AI-powered creative strategies.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>AI Creativity Sandbox</CardTitle>
+              <p className="text-sm text-gray-500">Select a type, describe your business, get AI strategies. Chat persists across sessions.</p>
+            </div>
+            {chat.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleNewProject}>New Project</Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -183,71 +243,32 @@ export function CreativityWorkspace() {
         </CardContent>
       </Card>
 
-      {/* Chat / Results */}
+      {/* Chat History */}
       {chat.length > 0 && (
         <Card variant="bordered">
           <CardContent className="p-4">
-            <div className="space-y-4 max-h-[600px] overflow-y-auto mb-4">
+            <div className="space-y-3 max-h-[500px] overflow-y-auto mb-4">
               {chat.map((msg, i) => (
-                <div key={i} className={`rounded-lg p-4 ${msg.role === "user" ? "bg-blue-900/20 border border-blue-800/30 ml-8" : "bg-black/30 border border-white/10 mr-8"}`}>
-                  <p className="text-sm mb-2 text-gray-300">{msg.content}</p>
-
-                  {msg.ideas && msg.ideas.length > 0 && (
-                    <div className="space-y-3 mt-3">
-                      {msg.ideas.map((idea, j) => (
-                        <IdeaCard key={j} idea={idea} />
-                      ))}
-                    </div>
-                  )}
-
-                  {msg.taglines && msg.taglines.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-400 mb-1">Taglines:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {msg.taglines.map((t, j) => (
-                          <span key={j} className="text-xs bg-purple-900/30 border border-purple-800/30 text-purple-300 rounded px-2 py-1">"{t}"</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {msg.nameSuggestions && msg.nameSuggestions.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-400 mb-1">Names:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {msg.nameSuggestions.map((n, j) => (
-                          <Badge key={j} variant="purple" size="sm">{n}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {msg.visualSuggestions && msg.visualSuggestions.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-400 mb-1">Visual Direction:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {msg.visualSuggestions.map((v, j) => (
-                          <span key={j} className="text-xs bg-blue-900/20 border border-blue-800/20 text-blue-300 rounded px-2 py-1">{v}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div key={i} className={`rounded-lg p-3 ${msg.role === "user" ? "bg-blue-900/20 border border-blue-800/30 ml-8" : "bg-black/30 border border-white/10 mr-8"}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="default" size="sm">{msg.type.replace(/_/g, " ")}</Badge>
+                    <span className="text-[10px] text-gray-500">{msg.role === "user" ? "You" : "AI"}</span>
+                  </div>
+                  <p className="text-sm text-gray-300">{msg.content}</p>
                 </div>
               ))}
-
-              {loading && chat[chat.length - 1]?.role !== "user" && (
-                <div className="bg-black/30 border border-white/10 rounded-lg p-4 mr-8">
+              {loading && (
+                <div className="bg-black/30 border border-white/10 rounded-lg p-3 mr-8">
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                    Generating ideas...
+                    Generating...
                   </div>
                 </div>
               )}
-
               <div ref={chatEndRef} />
             </div>
 
-            {/* Follow-up Input */}
+            {/* Follow-up */}
             <div className="flex gap-2 border-t border-white/10 pt-4">
               <input
                 type="text"
@@ -264,14 +285,68 @@ export function CreativityWorkspace() {
           </CardContent>
         </Card>
       )}
+
+      {/* Tabbed Results - Only shows active type */}
+      {latestAssistant && viewTabs.length > 0 && (
+        <Card variant="bordered">
+          <CardContent className="p-4">
+            <div className="flex gap-2 border-b border-white/10 pb-3 mb-4">
+              {viewTabs.map((v) => (
+                <Button
+                  key={v.key}
+                  variant={activeView === v.key ? "primary" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveView(v.key)}
+                >
+                  {v.label}
+                </Button>
+              ))}
+            </div>
+
+            {activeView === "ideas" && latestAssistant.ideas && latestAssistant.ideas.length > 0 && (
+              <div className="space-y-3">
+                {latestAssistant.ideas.map((idea, i) => (
+                  <IdeaCard key={i} idea={idea} />
+                ))}
+              </div>
+            )}
+
+            {activeView === "taglines" && latestAssistant.taglines && latestAssistant.taglines.length > 0 && (
+              <div className="space-y-2">
+                {latestAssistant.taglines.map((t, i) => (
+                  <div key={i} className="rounded-lg bg-purple-900/20 border border-purple-800/30 px-4 py-3 text-sm text-purple-300">
+                    &ldquo;{t}&rdquo;
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeView === "names" && latestAssistant.nameSuggestions && latestAssistant.nameSuggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {latestAssistant.nameSuggestions.map((n, i) => (
+                  <Badge key={i} variant="purple">{n}</Badge>
+                ))}
+              </div>
+            )}
+
+            {activeView === "visual" && latestAssistant.visualSuggestions && latestAssistant.visualSuggestions.length > 0 && (
+              <div className="space-y-2">
+                {latestAssistant.visualSuggestions.map((v, i) => (
+                  <div key={i} className="rounded-lg bg-blue-900/20 border border-blue-800/20 px-4 py-3 text-sm text-blue-300">{v}</div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
 
 function IdeaCard({ idea }: { idea: CreativeIdea }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-black/40 p-3">
-      <div className="mb-1 flex items-center justify-between">
+    <div className="rounded-lg border border-white/10 bg-black/40 p-4">
+      <div className="mb-2 flex items-center justify-between">
         <h5 className="text-sm font-medium text-gray-200">{idea.title}</h5>
         <div className="flex gap-1">
           <Badge variant={idea.estimatedImpact === "HIGH" ? "success" : idea.estimatedImpact === "MEDIUM" ? "warning" : "default"} size="sm">
@@ -283,13 +358,13 @@ function IdeaCard({ idea }: { idea: CreativeIdea }) {
         </div>
       </div>
       <p className="mb-2 text-xs text-gray-400">{idea.description}</p>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1 mb-2">
         {idea.channels.map((ch, i) => (
           <Badge key={i} variant="default" size="sm">{ch}</Badge>
         ))}
       </div>
       {idea.implementationSteps.length > 0 && (
-        <div className="mt-2 border-t border-white/10 pt-2">
+        <div className="border-t border-white/10 pt-2">
           <p className="mb-1 text-xs font-medium text-gray-400">Next Steps</p>
           <ol className="space-y-0.5">
             {idea.implementationSteps.map((step, i) => (
