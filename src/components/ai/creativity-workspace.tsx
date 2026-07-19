@@ -83,6 +83,25 @@ export function CreativityWorkspace() {
   };
 
   const callAI = async (question: string, isFollowUp: boolean) => {
+    if (isFollowUp) {
+      const history = chat.filter(m => m.role === "user" || (m.role === "assistant" && m.content)).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chat",
+          message: question,
+          businessContext: request.context,
+          history,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Generation failed");
+      return { chatResponse: data.response };
+    }
     const body: Record<string, unknown> = {
       action: "creativity",
       type: request.type,
@@ -90,8 +109,6 @@ export function CreativityWorkspace() {
       targetAudience: request.targetAudience,
       tone: request.tone,
     };
-    if (isFollowUp) body.followUp = question;
-
     const res = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -132,13 +149,13 @@ export function CreativityWorkspace() {
     try {
       const data = await callAI(question, true);
       setChat((prev) => [...prev, {
-        role: "assistant", content: "", type: request.type,
-        ideas: data.ideas || [], taglines: data.taglines || [],
-        nameSuggestions: data.nameSuggestions || [], visualSuggestions: data.visualSuggestions || [],
+        role: "assistant",
+        content: data.chatResponse || "I couldn't generate a response. Please try again.",
+        type: request.type,
       }]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed";
-      setChat((prev) => [...prev, { role: "assistant", content: msg, type: request.type }]);
+      setChat((prev) => [...prev, { role: "assistant", content: `Sorry, ${msg}. Please try again.`, type: request.type }]);
     } finally { setLoading(false); }
   };
 
@@ -200,7 +217,20 @@ export function CreativityWorkspace() {
                     <Badge variant="default" size="sm">{msg.type.replace(/_/g, " ")}</Badge>
                     <span className="text-[10px] text-gray-500">{msg.role === "user" ? "You" : "AI"}</span>
                   </div>
-                  {msg.content && <p className="text-sm text-gray-300 mb-2">{msg.content}</p>}
+                  {msg.content && (
+                    <div className="text-sm text-gray-300 mb-2 whitespace-pre-wrap leading-relaxed">
+                      {msg.content.split("\n").map((line, li) => {
+                        if (line.startsWith("• ") || line.startsWith("- ")) {
+                          return <div key={li} className="flex gap-2 ml-2"><span className="text-blue-400 shrink-0">•</span><span>{line.slice(2)}</span></div>;
+                        }
+                        if (line.match(/^\d+\./)) {
+                          return <div key={li} className="flex gap-2 ml-2"><span className="text-blue-400 shrink-0">{line.match(/^\d+/)?.[0]}.</span><span>{line.replace(/^\d+\.\s*/, "")}</span></div>;
+                        }
+                        if (line.trim() === "") return <div key={li} className="h-2" />;
+                        return <div key={li}>{line}</div>;
+                      })}
+                    </div>
+                  )}
 
                   {msg.type === "MARKETING" && msg.ideas && msg.ideas.length > 0 && (
                     <div className="space-y-2 mt-2">
@@ -317,7 +347,7 @@ export function CreativityWorkspace() {
             <div className="flex gap-2 border-t border-white/10 pt-4">
               <input
                 type="text"
-                placeholder="Ask a follow-up..."
+                placeholder="Ask anything about your business..."
                 value={followUp}
                 onChange={(e) => setFollowUp(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFollowUp()}
