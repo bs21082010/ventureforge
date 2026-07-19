@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     switch (type) {
       case "game": {
-        const result = await generateGame({ prompt: body.prompt, genre: body.genre });
+        const result = await generateGame({ prompt: body.prompt, genre: body.genre, dimension: body.dimension });
         return NextResponse.json(result);
       }
       case "website": {

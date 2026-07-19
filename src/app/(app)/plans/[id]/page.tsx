@@ -83,16 +83,20 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
             setAssumptions(p.assumptions);
           }
           if (p.sections?.length > 0) {
+            const fbMap = Object.fromEntries(FALLBACK_SECTIONS.map(s => [s.type, s.defaultContent]));
             setSections(p.sections.map((s: any) => ({
               type: s.type,
               title: s.title,
               icon: FALLBACK_SECTIONS.find((fs) => fs.type === s.type)?.icon || FileTextIcon,
-              defaultContent: typeof s.content === "object" ? (s.content as any).text || s.content as any : s.content,
+              defaultContent: (() => {
+                const text = typeof s.content === "object" ? (s.content as any).text || "" : s.content;
+                return text || fbMap[s.type] || "";
+              })(),
             })));
             const contentMap: Record<string, string> = {};
             p.sections.forEach((s: any) => {
               const text = typeof s.content === "object" ? (s.content as any).text || "" : s.content;
-              contentMap[s.type] = text;
+              contentMap[s.type] = text || fbMap[s.type] || "";
             });
             setSectionContent(contentMap);
           }
@@ -207,7 +211,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
       {activeTab === "sections" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {sections.map((section) => {
-            const content = sectionContent[section.type] || section.defaultContent;
+            const content = sectionContent[section.type] || section.defaultContent || "Content will be generated...";
             const isEditing = editingSection === section.type;
             return (
               <Card key={section.type} variant="bordered" className="transition-shadow hover:shadow-md">
@@ -273,6 +277,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
                     id: p.period, period: p.period, periodType: "MONTHLY" as const,
                     revenue: p.revenue, expenses: p.cogs + p.operatingExpenses.total,
                     netIncome: p.netIncome, cashFlow: p.cashFlow,
+                    cumulativeCashFlow: p.cumulativeCashFlow,
                     assets: p.balanceSheet.totalAssets, liabilities: p.balanceSheet.totalLiabilities,
                     equity: p.balanceSheet.equity, details: {},
                   })) || []} />

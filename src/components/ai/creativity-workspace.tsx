@@ -28,6 +28,10 @@ export function CreativityWorkspace() {
         body: JSON.stringify({ action: "creativity", ...request }),
       });
       const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error("AI error:", data.error || "Unknown error");
+        return;
+      }
       setResult(data);
     } catch (err) {
       console.error("Generation failed:", err);

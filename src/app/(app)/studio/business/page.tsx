@@ -19,6 +19,8 @@ export default function BusinessBuilderPage() {
   const [industry, setIndustry] = useState("");
   const [includeWebsite, setIncludeWebsite] = useState(false);
   const [includeApp, setIncludeApp] = useState(false);
+  const [hybridIdeas, setHybridIdeas] = useState<string[]>([]);
+  const [newIdea, setNewIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     businessPlan: { summary: string; sections: { title: string; content: string }[] };
@@ -26,6 +28,21 @@ export default function BusinessBuilderPage() {
     techStack: string[]; timeline: string; estimatedCosts: { item: string; cost: string }[];
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const addHybridIdea = () => {
+    if (newIdea.trim() && !hybridIdeas.includes(newIdea.trim())) {
+      setHybridIdeas([...hybridIdeas, newIdea.trim()]);
+      setNewIdea("");
+    }
+  };
+
+  const removeHybridIdea = (idx: number) => {
+    setHybridIdeas(hybridIdeas.filter((_, i) => i !== idx));
+  };
+
+  const combinedIdea = hybridIdeas.length > 0
+    ? `${idea} + Hybrid concepts: ${hybridIdeas.join(", ")}`
+    : idea;
 
   const generate = async () => {
     if (!idea.trim() || !industry.trim()) return;
@@ -35,7 +52,7 @@ export default function BusinessBuilderPage() {
       const res = await fetch("/api/builders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "business", idea, industry, includeWebsite, includeApp }),
+        body: JSON.stringify({ type: "business", idea: combinedIdea, industry, includeWebsite, includeApp }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -93,6 +110,30 @@ export default function BusinessBuilderPage() {
                 Include Mobile App
               </label>
             </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-400">Hybrid Mode — Combine Multiple Ideas</label>
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 p-2 rounded-lg border border-gray-300 bg-white text-black text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add another idea to combine..."
+                  value={newIdea}
+                  onChange={(e) => setNewIdea(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addHybridIdea()}
+                />
+                <Button size="sm" onClick={addHybridIdea} disabled={!newIdea.trim()}>Add</Button>
+              </div>
+              {hybridIdeas.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {hybridIdeas.map((h, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-blue-900/30 border border-blue-800/30 px-3 py-1 text-xs text-blue-300">
+                      {h}
+                      <button onClick={() => removeHybridIdea(i)} className="ml-1 text-blue-400 hover:text-blue-200">x</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <Button onClick={generate} disabled={loading || !idea.trim() || !industry.trim()} className="w-full">
               {loading ? "Generating..." : "Generate Business Bundle"}
             </Button>
@@ -139,6 +180,13 @@ export default function BusinessBuilderPage() {
             <Card>
               <CardHeader><CardTitle className="text-sm">Website Preview</CardTitle></CardHeader>
               <CardContent><div className="rounded-lg overflow-hidden border border-white/10 min-h-[200px] flex items-center justify-center bg-black/30" dangerouslySetInnerHTML={{ __html: result.websiteCode }} /></CardContent>
+            </Card>
+          )}
+
+          {result.appCode && (
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Mobile App Preview</CardTitle></CardHeader>
+              <CardContent><div className="rounded-lg overflow-hidden border border-white/10 min-h-[200px] bg-black/30 p-4"><pre className="text-xs text-gray-300 overflow-auto max-h-[400px] whitespace-pre-wrap">{result.appCode}</pre></div></CardContent>
             </Card>
           )}
         </motion.div>

@@ -62,6 +62,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ workflow: current, draft: sectionDraft });
     }
 
+    if (action === "creativity") {
+      const result = await generateMarketingIdeas(
+        body.industry || "Technology",
+        body.region || "global",
+        body.theme || "innovation",
+        body.count || 6
+      );
+      return NextResponse.json(result);
+    }
+
+    if (action === "foresight") {
+      const result = await generateForesight({
+        industry: body.industry || "Technology",
+        region: body.region || "global",
+        timeframe: body.timeframe || 5,
+        focusAreas: body.focusAreas || [],
+      });
+      return NextResponse.json(result);
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "AI processing failed";

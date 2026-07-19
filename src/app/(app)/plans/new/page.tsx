@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { REGIONS } from "@/lib/geospatial/regions";
+import { REGIONS, getUniqueCountries, getStatesForCountry, getCitiesForState } from "@/lib/geospatial/regions";
 
 const INDUSTRIES = [
   "Technology", "Finance", "Healthcare", "Education", "Retail",
@@ -18,14 +18,22 @@ export default function NewPlanPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [industry, setIndustry] = useState("");
-  const [region, setRegion] = useState("");
+  const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
 
   const showToast = (msg: string, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
 
+  const countries = useMemo(() => getUniqueCountries(), []);
+  const states = useMemo(() => country ? getStatesForCountry(country) : [], [country]);
+  const cities = useMemo(() => country && state ? getCitiesForState(country, state) : [], [country, state]);
+
+  const regionId = cities.find(c => c.id === city)?.id || "";
+
   const handleCreate = async () => {
-    if (!title || !industry || !region) return;
+    if (!title || !industry || !regionId) return;
     setLoading(true);
     showToast("Creating business plan...", "info");
 
@@ -33,7 +41,7 @@ export default function NewPlanPage() {
       const response = await fetch("/api/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, industry, region }),
+        body: JSON.stringify({ title, description, industry, region: regionId }),
       });
       const data = await response.json();
       if (data.plan) {
@@ -94,30 +102,69 @@ export default function NewPlanPage() {
             </div>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-300">Region / City</label>
-            <p className="mb-2 text-xs text-gray-500">Plans adapt to local economic conditions, regulations, and market dynamics.</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {REGIONS.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setRegion(r.id)}
-                  className={`rounded-lg border p-3 text-left transition-colors ${
-                    region === r.id
-                      ? "border-blue-500 bg-blue-900/20"
-                      : "border-white/10 bg-black/40 backdrop-blur-xl hover:border-gray-600"
-                  }`}
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-300">Location</label>
+            <p className="text-xs text-gray-500">Plans adapt to local economic conditions, regulations, and market dynamics.</p>
+            
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-400">Country</label>
+                <select
+                  value={country}
+                  onChange={(e) => { setCountry(e.target.value); setState(""); setCity(""); }}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 backdrop-blur-xl px-3 py-2.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
                 >
-                  <p className="text-sm font-medium text-gray-200">{r.name}</p>
-                  <p className="text-xs text-gray-400">{r.country}</p>
-                  <p className="text-xs text-gray-500">{r.economicProfile.marketSize} market</p>
-                </button>
-              ))}
+                  <option value="">Select Country</option>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-400">State</label>
+                <select
+                  value={state}
+                  onChange={(e) => { setState(e.target.value); setCity(""); }}
+                  disabled={!country}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 backdrop-blur-xl px-3 py-2.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Select State</option>
+                  {states.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-400">City</label>
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={!state}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 backdrop-blur-xl px-3 py-2.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Select City</option>
+                  {cities.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {city && (
+              <div className="rounded-lg border border-blue-800/30 bg-blue-900/20 p-3">
+                <div className="grid grid-cols-3 gap-4 text-xs">
+                  <div><span className="text-gray-400">Currency:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.currency}</span></div>
+                  <div><span className="text-gray-400">Language:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.language}</span></div>
+                  <div><span className="text-gray-400">Market:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.economicProfile.marketSize}</span></div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button variant="primary" onClick={handleCreate} disabled={loading || !title || !industry || !region}>
+            <Button variant="primary" onClick={handleCreate} disabled={loading || !title || !industry || !regionId}>
               {loading ? "Creating..." : "Create Business Plan"}
             </Button>
             <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>

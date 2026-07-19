@@ -121,8 +121,36 @@ export default function DataSourcesPage() {
 
       {Object.keys(liveData).length > 0 && (
         <div className="rounded-lg border border-green-800/30 bg-green-900/20 p-4">
-          <h3 className="text-sm font-medium text-green-300">Live Economic Data (World Bank API)</h3>
-          <p className="mt-1 text-xs text-green-400/70">Data fetched successfully — view in Research Hub for formatted display</p>
+          <h3 className="text-sm font-medium text-green-300 mb-3">Live Economic Data (World Bank API)</h3>
+          {liveData.data && Array.isArray(liveData.data) && liveData.data.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-green-800/30">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-green-400 uppercase">Indicator</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-green-400 uppercase">Country</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-green-400 uppercase">Year</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-green-400 uppercase">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-green-800/20">
+                  {liveData.data.map((item: any, i: number) => (
+                    <tr key={i} className="hover:bg-green-900/10">
+                      <td className="px-3 py-2 text-gray-200">{item.indicator?.value || item.indicator || "N/A"}</td>
+                      <td className="px-3 py-2 text-right text-gray-300">{item.country?.value || item.country || "N/A"}</td>
+                      <td className="px-3 py-2 text-right text-gray-300">{item.date || "N/A"}</td>
+                      <td className="px-3 py-2 text-right font-medium text-green-300">{item.value != null ? Number(item.value).toLocaleString() : "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-green-400/70">Data fetched successfully — no records available for this query</p>
+          )}
+          {liveData.timestamp && (
+            <p className="mt-2 text-xs text-green-400/50">Last fetched: {new Date(liveData.timestamp).toLocaleString()}</p>
+          )}
         </div>
       )}
 

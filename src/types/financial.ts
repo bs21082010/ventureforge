@@ -6,6 +6,7 @@ export interface FinancialProjection {
   expenses: number;
   netIncome: number;
   cashFlow: number;
+  cumulativeCashFlow: number;
   assets: number;
   liabilities: number;
   equity: number;

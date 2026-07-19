@@ -52,6 +52,7 @@ export default function FinancialEnginePage() {
     expenses: p.cogs + p.operatingExpenses.total,
     netIncome: p.netIncome,
     cashFlow: p.cashFlow,
+    cumulativeCashFlow: p.cumulativeCashFlow,
     assets: p.balanceSheet.totalAssets,
     liabilities: p.balanceSheet.totalLiabilities,
     equity: p.balanceSheet.equity,
