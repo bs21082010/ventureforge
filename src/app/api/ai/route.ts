@@ -63,12 +63,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "creativity") {
-      const result = await generateMarketingIdeas(
-        body.industry || "Technology",
-        body.region || "global",
-        body.theme || "innovation",
-        body.count || 6
-      );
+      const result = await generateMarketingIdeas({
+        planId: body.planId || "",
+        type: body.type || "MARKETING",
+        context: body.context || body.industry || "Technology",
+        targetAudience: body.targetAudience || "",
+        tone: body.tone || "professional",
+        constraints: body.constraints,
+      });
       return NextResponse.json(result);
     }
 

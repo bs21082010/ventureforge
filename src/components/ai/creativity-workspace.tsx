@@ -17,10 +17,12 @@ export function CreativityWorkspace() {
   });
   const [result, setResult] = useState<CreativityResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!request.context) return;
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch("/api/ai", {
         method: "POST",
@@ -29,11 +31,12 @@ export function CreativityWorkspace() {
       });
       const data = await response.json();
       if (!response.ok || data.error) {
-        console.error("AI error:", data.error || "Unknown error");
+        setError(data.error || "Generation failed. Please try again.");
         return;
       }
       setResult(data);
     } catch (err) {
+      setError("Network error. Please try again.");
       console.error("Generation failed:", err);
     } finally {
       setLoading(false);
@@ -89,6 +92,12 @@ export function CreativityWorkspace() {
               <Button variant="primary" onClick={handleGenerate} disabled={loading || !request.context}>
                 {loading ? "Generating..." : "Generate Ideas"}
               </Button>
+
+              {error && (
+                <div className="rounded-lg border border-red-800/30 bg-red-900/20 p-3 text-sm text-red-300">
+                  {error}
+                </div>
+              )}
             </div>
 
             {result && (
