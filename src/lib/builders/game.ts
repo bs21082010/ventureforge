@@ -392,8 +392,8 @@ function generateRacingGame(analysis: any, c: any): GameResult {
 <script>
 var cv=document.getElementById('g'),ctx=cv.getContext('2d');
 var W=400,H=650;
-var ROAD_L=60,ROAD_W=280,ROAD_R=ROAD_L+ROAD_W;
-var LX=ROAD_L,RX=ROAD_R,LW=ROAD_W/3;
+var ROAD_L=60,ROAD_W=280,ROAD_R=ROAD_L+ROAD_W,LW=ROAD_W/3;
+var RL=ROAD_L,RR=ROAD_R,RW=ROAD_W;
 
 var player={x:170,y:530,w:36,h:68,speed:0,color:'#00bfff'};
 var cars=[],stars=[],score=0,best=0,gameSpeed=3,alive=true,aiMode=false;
