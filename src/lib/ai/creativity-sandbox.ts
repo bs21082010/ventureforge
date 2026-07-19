@@ -1,23 +1,33 @@
 import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
 import type { CreativityRequest, CreativityResult, CreativeIdea } from "@/types/ai";
 
-const SYSTEM_PROMPT = `You are a creative business strategist and marketing expert. Generate creative marketing, branding, and engagement ideas based on the user's context. Return ONLY valid JSON with this structure:
-{
-  "ideas": [
-    {
-      "title": "string",
-      "description": "detailed actionable description",
-      "channels": ["channel1", "channel2"],
-      "estimatedImpact": "LOW" | "MEDIUM" | "HIGH",
-      "estimatedCost": "LOW" | "MEDIUM" | "HIGH",
-      "implementationSteps": ["step1", "step2", "step3", "step4"]
-    }
-  ],
-  "taglines": ["tagline1", "tagline2", "tagline3", "tagline4"],
-  "visualSuggestions": ["suggestion1", "suggestion2", "suggestion3"],
-  "nameSuggestions": ["name1", "name2", "name3", "name4", "name5", "name6"]
-}
-Generate 6-8 ideas. Be specific, creative, and actionable. Ideas should be realistic and tailored to the user's context.`;
+const TYPE_PROMPTS: Record<string, { system: string; user: string }> = {
+  MARKETING: {
+    system: `You are a growth hacker and digital marketing strategist. Generate aggressive, data-driven marketing campaigns. Focus on customer acquisition, viral loops, paid ads strategy, SEO, content marketing funnels, and conversion optimization. Return ONLY valid JSON:
+{"ideas":[{"title":"string","description":"detailed marketing strategy with specific tactics and channels","channels":["specific channel1","specific channel2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["marketing tagline1","tagline2","tagline3","tagline4"],"visualSuggestions":["visual direction 1","visual 2","visual 3"],"nameSuggestions":["campaign name 1","name 2","name 3","name 4","name 5","name 6"]}`,
+    user: (ctx: string, aud: string, tone: string) => `Create 6-8 aggressive marketing campaign strategies for: ${ctx}\nTarget: ${aud || "general audience"}\nTone: ${tone || "bold and compelling"}\n\nEach idea must be a COMPLETELY DIFFERENT marketing strategy (e.g. one viral social campaign, one SEO strategy, one influencer partnership, one referral program, one email funnel, one paid ads strategy). Do NOT just change names - each must be a genuinely different approach.`,
+  },
+  BRANDING: {
+    system: `You are a brand strategist and visual identity expert. Generate brand identity concepts including brand positioning, visual identity systems, brand voice guidelines, and brand storytelling frameworks. Return ONLY valid JSON:
+{"ideas":[{"title":"string","description":"detailed brand identity concept with positioning, colors, typography, voice","channels":["Brand Touchpoint 1","Touchpoint 2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["brand tagline 1","tagline2","tagline3","tagline4"],"visualSuggestions":["visual identity direction 1","visual 2","visual 3"],"nameSuggestions":["brand name 1","name 2","name 3","name 4","name 5","name 6"]}`,
+    user: (ctx: string, aud: string, tone: string) => `Create 6-8 brand identity concepts for: ${ctx}\nTarget audience: ${aud || "general market"}\nDesired tone: ${tone || "modern and trustworthy"}\n\nEach concept must cover a DIFFERENT branding angle: brand positioning statement, visual identity (colors/fonts/mood), brand voice personality, brand story/narrative, brand archetype, and brand experience design. Each must be genuinely different.`,
+  },
+  CUSTOMER_ENGAGEMENT: {
+    system: `You are a customer experience designer and community builder. Generate customer engagement strategies focused on retention, loyalty, community building, gamification, and emotional connection. Return ONLY valid JSON:
+{"ideas":[{"title":"string","description":"detailed engagement strategy with specific mechanics and touchpoints","channels":["Engagement Channel 1","Channel 2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["engagement tagline 1","tagline2","tagline3","tagline4"],"visualSuggestions":["engagement visual 1","visual 2","visual 3"],"nameSuggestions":["program name 1","name 2","name 3","name 4","name 5","name 6"]}`,
+    user: (ctx: string, aud: string, tone: string) => `Create 6-8 customer engagement strategies for: ${ctx}\nTarget: ${aud || "existing customers"}\nTone: ${tone || "warm and personal"}\n\nEach strategy must be a DIFFERENT engagement mechanic: loyalty program, gamification system, community platform, personalized journey, surprise & delight, user-generated content campaign, VIP tier system, and feedback loop. Each must be genuinely different.`,
+  },
+  CONTENT: {
+    system: `You are a content strategist and storyteller. Generate content marketing strategies including blog series, video concepts, podcast ideas, social media content calendars, and thought leadership pieces. Return ONLY valid JSON:
+{"ideas":[{"title":"string","description":"detailed content strategy with format, topics, publishing cadence","channels":["Content Platform 1","Platform 2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["content tagline 1","tagline2","tagline3","tagline4"],"visualSuggestions":["content visual 1","visual 2","visual 3"],"nameSuggestions":["series name 1","name 2","name 3","name 4","name 5","name 6"]}`,
+    user: (ctx: string, aud: string, tone: string) => `Create 6-8 content marketing strategies for: ${ctx}\nAudience: ${aud || "target market"}\nTone: ${tone || "informative and engaging"}\n\nEach strategy must be a DIFFERENT content format: long-form blog series, short-form video series, podcast format, infographic campaign, email newsletter series, social media challenge, webinar series, and user-generated content campaign. Each must be genuinely different.`,
+  },
+  NAMING: {
+    system: `You are a naming expert and brand linguist. Generate business/product names with domain availability considerations, memorability scoring, and naming rationale. Return ONLY valid JSON:
+{"ideas":[{"title":"string","description":"naming rationale including meaning, origin, memorability factors, domain considerations","channels":["Naming Convention 1","Convention 2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["slogan 1","slogan2","slogan3","slogan4"],"visualSuggestions":["logo direction 1","visual 2","visual 3"],"nameSuggestions":["name option 1","name 2","name 3","name 4","name 5","name 6"]}`,
+    user: (ctx: string, aud: string, tone: string) => `Create 6-8 naming concepts for: ${ctx}\nTarget: ${aud || "global market"}\nTone: ${tone || "modern and memorable"}\n\nEach naming concept must use a DIFFERENT naming technique: portmanteau (blend words), compound word, metaphorical name, invented word, acronym, experiential name, founder name, and descriptive-modifier combination. Each must be genuinely different.`,
+  },
+};
 
 export async function generateMarketingIdeas(
   request: CreativityRequest
@@ -27,16 +37,17 @@ export async function generateMarketingIdeas(
   if (hasAI) {
     try {
       const model = getModel();
-      const userPrompt = `Industry/Context: ${request.context}
-Type: ${request.type}
-Target Audience: ${request.targetAudience || "General"}
-Tone: ${request.tone || "Professional"}
-${request.constraints?.length ? `Constraints: ${request.constraints.join(", ")}` : ""}
+      const typeConfig = TYPE_PROMPTS[request.type] || TYPE_PROMPTS.MARKETING;
 
-Generate creative marketing ideas for this business context. Be specific and actionable.`;
+      const systemPrompt = typeConfig.system;
+      const userPrompt = typeConfig.user(
+        request.context,
+        request.targetAudience || "",
+        request.tone || "professional"
+      );
 
-      const result = await chatCompletion(model, SYSTEM_PROMPT, userPrompt, {
-        temperature: 0.8,
+      const result = await chatCompletion(model, systemPrompt, userPrompt, {
+        temperature: 0.85,
         maxTokens: 4096,
       });
 
