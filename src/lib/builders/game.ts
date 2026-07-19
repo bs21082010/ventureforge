@@ -25,9 +25,13 @@ function analyzePrompt(prompt: string): {
   const p = prompt.toLowerCase();
 
   // Extract title
-  const titleMatch = p.match(/(?:called|named|titled|叫|名)\s+["""]?([^""",.]+?)[""""]?(?:\s|,|\.|$)/i)
-    || p.match(/^([\w\s]+?)(?:\s+game|\s+with|\s+that|\s+where|\s+featuring)/i);
-  const title = titleMatch?.[1]?.trim().split(' ').slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || extractTitle(p);
+  const titleMatch = p.match(/(?:called|named|titled|叫|名)\s+["""]?([^""",.]+?)[""""]?(?:\s|,|\.|$)/i);
+  let title: string;
+  if (titleMatch) {
+    title = titleMatch[1].trim().split(' ').slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  } else {
+    title = extractTitle(p);
+  }
 
   // Extract theme/setting
   const setting = extractSetting(p);
@@ -45,7 +49,8 @@ function analyzePrompt(prompt: string): {
 }
 
 function extractTitle(p: string): string {
-  const words = p.split(/\s+/).filter(w => w.length > 2 && !['the', 'and', 'for', 'with', 'that', 'this', 'game', 'make', 'create', 'build', 'want', 'about', 'like'].includes(w));
+  const skipWords = ['the', 'and', 'for', 'with', 'that', 'this', 'game', 'make', 'create', 'build', 'want', 'about', 'like', 'from', 'where', 'featuring', 'python', 'pygame', 'using', 'built', 'html', 'css', 'javascript'];
+  const words = p.split(/\s+/).filter(w => w.length > 2 && !skipWords.includes(w.toLowerCase()));
   if (words.length >= 2) return words.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   if (words.length === 1) return words[0].charAt(0).toUpperCase() + words[0].slice(1);
   return "My Game";
@@ -385,7 +390,8 @@ function generateRacingGame(analysis: any, c: any): GameResult {
 <style>*{margin:0;padding:0;box-sizing:border-box}body{background:${c.bg};display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}canvas{border:2px solid ${c.accent};border-radius:8px;background:${c.bg}}</style></head><body>
 <canvas id="g" width="400" height="600"></canvas><script>
 const ctx=document.getElementById('g').getContext('2d');
-let pl={x:180,w:40,h:60,y:500},road={x:50,w:300,lines:[]},obs=[],sc=0,hi=parseInt(localStorage.getItem('rh')||'0'),go=false,spd=3,ks={};
+let pl={x:180,w:40,h:60,y:500},road={x:50,w:300,lines:[]},obs=[],sc=0,hi=0,go=false,spd=3,ks={};
+try{hi=parseInt(localStorage.getItem('rh')||'0')}catch(e){hi=0}
 for(let i=0;i<6;i++)road.lines.push({y:i*100});
 document.addEventListener('keydown',e=>{ks[e.key]=true;if(go&&e.key===' ')restart()});
 document.addEventListener('keyup',e=>ks[e.key]=false);
@@ -394,7 +400,7 @@ function update(){if(go)return;if(ks['ArrowLeft']&&pl.x>road.x)pl.x-=5;if(ks['Ar
 road.lines.forEach(l=>{l.y+=spd;if(l.y>600)l.y=-100});if(sc%50===0&&sc>0)spd=Math.min(spd+.2,8);
 if(Math.random()<.02){let w=40+Math.random()*30;obs.push({x:road.x+20+Math.random()*(road.w-w-40),y:-60,w,h:60+Math.random()*40})}
 obs=obs.filter(o=>o.y<650);obs.forEach(o=>{o.y+=spd;if(pl.x<o.x+o.w&&pl.x+pl.w>o.x&&pl.y<o.y+o.h&&pl.y+pl.h>o.y)go=true});
-sc++;if(sc>hi){hi=sc;localStorage.setItem('rh',hi)}}
+sc++;if(sc>hi){hi=sc;try{localStorage.setItem('rh',hi)}catch(e){}}}
 function draw(){ctx.fillStyle='#2a2a3e';ctx.fillRect(road.x,0,road.w,600);
 ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.setLineDash([20,20]);ctx.strokeRect(road.x,0,road.w,600);ctx.setLineDash([]);
 road.lines.forEach(l=>{ctx.fillStyle='#fff';ctx.fillRect(road.x+road.w/2-2,l.y,4,40)});
