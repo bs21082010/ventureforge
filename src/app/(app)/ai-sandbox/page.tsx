@@ -87,7 +87,7 @@ export default function AISandboxPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="flex items-end gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
                 <div className="flex-1">
                   <label className="mb-1 block text-sm font-medium text-gray-300">Industry</label>
                   <select
@@ -115,7 +115,7 @@ export default function AISandboxPage() {
                     <option value="ambikapur">Ambikapur, India</option>
                   </select>
                 </div>
-                <Button variant="primary" onClick={generateForesight} disabled={foresightLoading}>
+                <Button variant="primary" onClick={generateForesight} disabled={foresightLoading} className="w-full sm:w-auto">
                   {foresightLoading ? "Analyzing..." : "Generate Foresight"}
                 </Button>
               </div>

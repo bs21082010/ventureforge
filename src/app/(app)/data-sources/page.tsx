@@ -177,21 +177,21 @@ export default function DataSourcesPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Data Sources</h1>
-          <p className="text-sm text-gray-400">Live economic data + worldwide stock market indices</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Data Sources</h1>
+          <p className="text-xs sm:text-sm text-gray-400">Live economic data + worldwide stock market indices</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={fetchLiveData}>Fetch Economic Data</Button>
-          <Button variant="primary" onClick={() => sources.forEach((s) => handleRefresh(s.id))}>Refresh All</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={fetchLiveData} className="flex-1 sm:flex-none">Fetch Economic Data</Button>
+          <Button variant="primary" onClick={() => sources.forEach((s) => handleRefresh(s.id))} className="flex-1 sm:flex-none">Refresh All</Button>
         </div>
       </div>
 
       {/* World Markets Section */}
       <Card variant="bordered">
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>World Markets</CardTitle>
               <p className="text-xs text-gray-400 mt-1">Live stock market indices from {WORLD_MARKETS.length} indices across the globe</p>
@@ -202,7 +202,7 @@ export default function DataSourcesPage() {
                 placeholder="Search markets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-lg border border-white/10 bg-black/40 backdrop-blur-xl px-3 py-2 text-sm text-gray-200 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none w-48"
+                className="w-full sm:w-48 rounded-lg border border-white/10 bg-black/40 backdrop-blur-xl px-3 py-2 text-sm text-gray-200 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>

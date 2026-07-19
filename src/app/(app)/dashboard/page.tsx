@@ -73,20 +73,20 @@ export default function DashboardPage() {
       <ParticleField
         overlay={
           <div className="text-center px-4">
-            <p className="text-xs text-blue-400 uppercase tracking-[0.2em] mb-3 font-share-tech-mono">VentureForge v2.0</p>
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
+            <p className="text-[10px] sm:text-xs text-blue-400 uppercase tracking-[0.2em] mb-3 font-share-tech-mono">VentureForge v2.0</p>
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
               Build Your
               <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"> Empire</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-xl mx-auto">
+            <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto">
               AI-powered business planning, financial modeling, compliance checks, and market research — all in one command center.
             </p>
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <Link href="/plans/new">
-                <Button className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-5 text-base">Start New Plan</Button>
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Link href="/plans/new" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 px-6 py-5 text-sm sm:text-base">Start New Plan</Button>
               </Link>
-              <Link href="/studio">
-                <Button variant="outline" className="border-white/10 text-gray-300 hover:bg-white/5 px-6 py-5 text-base">Open Studio</Button>
+              <Link href="/studio" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto border-white/10 text-gray-300 hover:bg-white/5 px-6 py-5 text-sm sm:text-base">Open Studio</Button>
               </Link>
             </div>
             <p className="mt-6 text-xs text-gray-600 font-share-tech-mono">scroll to explore ▼</p>
