@@ -26,14 +26,21 @@ const STATUS_COLORS: Record<string, "success" | "warning" | "info" | "danger" | 
   ARCHIVED: "danger",
 };
 
-const FALLBACK_PLANS: Plan[] = [
-  { id: "plan_1", title: "TechVenture - AI Analytics Platform", description: "B2B SaaS for mid-market BI", industry: "Technology", region: "Mumbai", status: "IN_REVIEW", version: 2, createdAt: "2025-01-15" },
-  { id: "plan_2", title: "GreenBite - Organic Food Delivery", description: "Farm-to-table delivery service", industry: "Food Service", region: "Dubai", status: "DRAFT", version: 1, createdAt: "2025-02-20" },
-  { id: "plan_3", title: "FinLedger - Digital Banking", description: "Neobank for underserved markets", industry: "Finance", region: "Singapore", status: "APPROVED", version: 3, createdAt: "2024-11-10" },
-];
+function getLocalPlans(): Plan[] {
+  try {
+    const raw = localStorage.getItem("vf_plans");
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveLocalPlan(plan: Plan) {
+  const plans = getLocalPlans();
+  plans.unshift(plan);
+  localStorage.setItem("vf_plans", JSON.stringify(plans));
+}
 
 export default function PlansPage() {
-  const [plans, setPlans] = useState<Plan[]>(FALLBACK_PLANS);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [toast, setToast] = useState<string | null>(null);
@@ -42,12 +49,23 @@ export default function PlansPage() {
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   useEffect(() => {
+    // Try API first, fallback to localStorage
     fetch("/api/plans")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (data?.plans?.length > 0) setPlans(data.plans);
+        if (data?.plans?.length > 0) {
+          setPlans(data.plans);
+        } else {
+          // Use localStorage plans
+          const local = getLocalPlans();
+          setPlans(local);
+        }
       })
-      .catch(() => {})
+      .catch(() => {
+        // API failed, use localStorage
+        const local = getLocalPlans();
+        setPlans(local);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -112,7 +130,7 @@ export default function PlansPage() {
                   <p className="text-sm text-gray-400">{plan.description}</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-3 flex gap-2">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     <Badge variant="default">{plan.industry}</Badge>
                     <Badge variant="default">{plan.region}</Badge>
                     <Badge variant="default">v{plan.version}</Badge>
@@ -127,7 +145,10 @@ export default function PlansPage() {
 
       {!loading && filtered.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/10 bg-black/40 backdrop-blur-xl p-6 sm:p-12 text-center">
-          <p className="text-gray-400">No plans found. Create your first business plan!</p>
+          <p className="text-gray-400">No plans yet. Create your first business plan!</p>
+          <Link href="/plans/new" className="mt-4 inline-block">
+            <Button variant="primary">Create Plan</Button>
+          </Link>
         </div>
       )}
     </div>

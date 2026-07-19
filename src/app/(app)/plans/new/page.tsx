@@ -37,30 +37,99 @@ export default function NewPlanPage() {
     setLoading(true);
     showToast("Forge is generating your business plan...", "info");
 
+    const planId = `plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    // Save to localStorage immediately so it shows in Plans list
+    const localPlan = {
+      id: planId,
+      title,
+      description,
+      industry,
+      region: city || regionId,
+      status: "DRAFT",
+      version: 1,
+      createdAt: new Date().toISOString(),
+      sections: [
+        { type: "EXECUTIVE_SUMMARY", title: "Executive Summary", content: { text: "" }, order: 0 },
+        { type: "MARKET_ANALYSIS", title: "Market Analysis", content: { text: "" }, order: 1 },
+        { type: "PRODUCT_DESCRIPTION", title: "Product Description", content: { text: "" }, order: 2 },
+        { type: "MARKETING_STRATEGY", title: "Marketing Strategy", content: { text: "" }, order: 3 },
+        { type: "OPERATIONS_PLAN", title: "Operations Plan", content: { text: "" }, order: 4 },
+        { type: "FINANCIAL_PLAN", title: "Financial Plan", content: { text: "" }, order: 5 },
+        { type: "RISK_ASSESSMENT", title: "Risk Assessment", content: { text: "" }, order: 6 },
+        { type: "TEAM_ORGANIZATION", title: "Team & Organization", content: { text: "" }, order: 7 },
+      ],
+    };
+
     try {
+      // Try API first
       const response = await fetch("/api/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, industry, region: regionId }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        showToast(data.error || "Failed to create plan", "error");
-        setLoading(false);
-        return;
-      }
       if (data.plan) {
+        // API worked - save to localStorage too
+        const apiPlan = {
+          ...data.plan,
+          createdAt: data.plan.createdAt || new Date().toISOString(),
+        };
+        const existing = JSON.parse(localStorage.getItem("vf_plans") || "[]");
+        existing.unshift(apiPlan);
+        localStorage.setItem("vf_plans", JSON.stringify(existing));
         showToast("Business plan created successfully!", "success");
         router.push(`/plans/${data.plan.id}`);
-      } else {
-        showToast("Failed to create plan. Please try again.", "error");
+        return;
       }
-    } catch (err) {
-      console.error("Failed to create plan:", err);
-      showToast("Network error. Please check your connection and try again.", "error");
-    } finally {
-      setLoading(false);
+    } catch {}
+
+    // API failed - use localStorage plan with AI sections
+    showToast("Forge is generating content...", "info");
+    try {
+      const aiResponse = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chat",
+          message: `Write a complete business plan for "${title}" in the ${industry} industry located in ${city || regionId}. Include these 8 sections with detailed, specific content for each:\n\n1. EXECUTIVE_SUMMARY: Mission, value proposition, target market, financial highlights\n2. MARKET_ANALYSIS: Market size, growth trends, competitors, opportunity\n3. PRODUCT_DESCRIPTION: What the product does, features, tech stack, differentiators\n4. MARKETING_STRATEGY: Channels, acquisition, branding, pricing, growth tactics\n5. OPERATIONS_PLAN: Daily ops, infrastructure, processes, scaling\n6. FINANCIAL_PLAN: Revenue model, costs, funding, projections\n7. RISK_ASSESSMENT: 5-7 risks with mitigations\n8. TEAM_ORGANIZATION: Roles, structure, culture, hiring plan`,
+          history: [],
+        }),
+      });
+      const aiData = await aiResponse.json();
+      const fullText = aiData.response || "";
+
+      // Parse sections from AI response
+      const sectionPatterns = [
+        { type: "EXECUTIVE_SUMMARY", regex: /(?:executive summary|overview)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:market analysis|market overview|MARKET)|$)/i },
+        { type: "MARKET_ANALYSIS", regex: /(?:market analysis|market overview|market opportunity)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:product|PRODUCT)|$)/i },
+        { type: "PRODUCT_DESCRIPTION", regex: /(?:product description|product overview|our product)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:marketing|MARKETING)|$)/i },
+        { type: "MARKETING_STRATEGY", regex: /(?:marketing strategy|go.to.market)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:operations|OPERATIONS)|$)/i },
+        { type: "OPERATIONS_PLAN", regex: /(?:operations plan|operations)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:financial|FINANCIAL)|$)/i },
+        { type: "FINANCIAL_PLAN", regex: /(?:financial plan|financials)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:risk|RISK)|$)/i },
+        { type: "RISK_ASSESSMENT", regex: /(?:risk assessment|risks)[:\s]*([\s\S]*?)(?=\d\.?\s*(?:team|TEAM)|$)/i },
+        { type: "TEAM_ORGANIZATION", regex: /(?:team|organization|team & organization)[:\s]*([\s\S]*?)$/i },
+      ];
+
+      const sections = localPlan.sections.map((s, i) => {
+        const pattern = sectionPatterns[i];
+        const match = fullText.match(pattern?.regex || /$/);
+        const text = match?.[1]?.trim() || fullText.slice(i * Math.floor(fullText.length / 8), (i + 1) * Math.floor(fullText.length / 8)).trim();
+        return { ...s, content: { text } };
+      });
+
+      localPlan.sections = sections;
+    } catch {
+      // AI failed, use empty sections
     }
+
+    // Save to localStorage
+    const existing = JSON.parse(localStorage.getItem("vf_plans") || "[]");
+    existing.unshift(localPlan);
+    localStorage.setItem("vf_plans", JSON.stringify(existing));
+
+    showToast("Business plan created!", "success");
+    router.push(`/plans/${planId}`);
   };
 
   return (

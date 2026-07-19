@@ -73,15 +73,14 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
   const recalc = useFinancialStore((s) => s.recalculate);
 
   useEffect(() => {
+    // Try API first
     fetch(`/api/plans?id=${id}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (data?.plan) {
           const p = data.plan;
           setPlanMeta(p);
-          if (p.assumptions?.length > 0) {
-            setAssumptions(p.assumptions);
-          }
+          if (p.assumptions?.length > 0) setAssumptions(p.assumptions);
           if (p.sections?.length > 0) {
             const fbMap = Object.fromEntries(FALLBACK_SECTIONS.map(s => [s.type, s.defaultContent]));
             setSections(p.sections.map((s: any) => ({
@@ -100,10 +99,51 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
             });
             setSectionContent(contentMap);
           }
+          setLoading(false);
+          return;
         }
+        // API failed, try localStorage
+        loadFromLocalStorage();
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {
+        loadFromLocalStorage();
+      });
+
+    function loadFromLocalStorage() {
+      try {
+        const plans = JSON.parse(localStorage.getItem("vf_plans") || "[]");
+        const plan = plans.find((p: any) => p.id === id);
+        if (plan) {
+          setPlanMeta({
+            title: plan.title,
+            description: plan.description,
+            industry: plan.industry,
+            region: plan.region,
+            status: plan.status || "DRAFT",
+            version: plan.version || 1,
+          });
+          if (plan.sections?.length > 0) {
+            const fbMap = Object.fromEntries(FALLBACK_SECTIONS.map(s => [s.type, s.defaultContent]));
+            setSections(plan.sections.map((s: any) => ({
+              type: s.type,
+              title: s.title,
+              icon: FALLBACK_SECTIONS.find((fs) => fs.type === s.type)?.icon || FileTextIcon,
+              defaultContent: (() => {
+                const text = typeof s.content === "object" ? (s.content as any).text || "" : s.content;
+                return text || fbMap[s.type] || "";
+              })(),
+            })));
+            const contentMap: Record<string, string> = {};
+            plan.sections.forEach((s: any) => {
+              const text = typeof s.content === "object" ? (s.content as any).text || "" : s.content;
+              contentMap[s.type] = text || fbMap[s.type] || "";
+            });
+            setSectionContent(contentMap);
+          }
+        }
+      } catch {}
+      setLoading(false);
+    }
   }, [id]);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -130,6 +170,24 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
     setEditingSection(null);
 
     const section = sections.find((s) => s.type === type);
+
+    // Save to localStorage
+    try {
+      const plans = JSON.parse(localStorage.getItem("vf_plans") || "[]");
+      const planIdx = plans.findIndex((p: any) => p.id === id);
+      if (planIdx !== -1) {
+        if (!plans[planIdx].sections) plans[planIdx].sections = [];
+        const secIdx = plans[planIdx].sections.findIndex((s: any) => s.type === type);
+        if (secIdx !== -1) {
+          plans[planIdx].sections[secIdx].content = { text: editText };
+        } else {
+          plans[planIdx].sections.push({ type, title: section?.title || type, content: { text: editText } });
+        }
+        localStorage.setItem("vf_plans", JSON.stringify(plans));
+      }
+    } catch {}
+
+    // Also try API
     if (section) {
       fetch("/api/plans", {
         method: "PUT",
