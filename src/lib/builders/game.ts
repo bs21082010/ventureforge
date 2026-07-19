@@ -384,164 +384,297 @@ function generateRacingGame(analysis: any, c: any): GameResult {
   return {
     title,
     description: `${title} — Dodge traffic and survive`,
-    instructions: "LEFT/RIGHT to steer, survive as long as you can! SPACE to start AI Analyzer.",
+    instructions: "LEFT/RIGHT to steer, A for AI Analyzer, survive!",
     techStack: ["HTML5", "CSS3", "JavaScript", "Canvas 2D"],
     html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Courier New',monospace}#wrap{position:relative}canvas{border:2px solid ${c.accent};border-radius:8px;background:#0a0a1a}#hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#fff;font-size:13px;pointer-events:none;z-index:5}#ai-panel{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(0,0,0,.85);border:1px solid ${c.accent};border-radius:8px;padding:10px;color:#fff;font-size:11px;display:none;z-index:5}#ai-panel h3{color:${c.accent};font-size:13px;margin-bottom:6px}.ai-bar{height:6px;background:#222;border-radius:3px;margin:3px 0}.ai-fill{height:100%;border-radius:3px;transition:width .3s}</style></head><body>
-<div id="wrap">
-<canvas id="g" width="400" height="600"></canvas>
-<div id="hud"><span id="sc">Score: 0</span><span id="hi">Best: 0</span><span id="spd">0 km/h</span></div>
-<div id="ai-panel"><h3>AI ANALYZER</h3><div>Reaction: <span id="ai-react">0</span>ms</div><div class="ai-bar"><div class="ai-fill" id="ai-acc" style="width:0;background:${c.primary}"></div></div><div>Accuracy: <span id="ai-accT">0</span>%</div><div class="ai-bar"><div class="ai-fill" id="ai-dodge" style="width:0;background:#4caf50"></div></div><div>Dodge Rate: <span id="ai-dodgeT">0</span>%</div><div>Decisions: <span id="ai-dec">0</span> | Crashes: <span id="ai-crash">0</span></div><div style="margin-top:6px;color:${c.accent}">Status: <span id="ai-status">Idle</span></div></div>
-</div>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Courier New',monospace}#wrap{position:relative}canvas{display:block}</style></head><body>
+<div id="wrap"><canvas id="g" width="400" height="650"></canvas></div>
 <script>
-const ctx=document.getElementById('g').getContext('2d');
-let pl={x:180,w:40,h:70,y:500},road={x:50,w:300,lines:[]},obs=[],sc=0,hi=0,go=false,spd=3,ks={};
-let aiMode=false,aiTimer=0,aiDecisions=0,aiDodges=0,aiCrashes=0,aiReactions=[];
-try{hi=parseInt(localStorage.getItem('rh2')||'0')}catch(e){hi=0}
-for(let i=0;i<6;i++)road.lines.push({y:i*100});
+var cv=document.getElementById('g'),ctx=cv.getContext('2d');
+var W=400,H=650;
+var ROAD_L=60,ROAD_W=280,ROAD_R=ROAD_L+ROAD_W;
+var LX=ROAD_L,RX=ROAD_R,LW=ROAD_W/3;
 
-function drawCar(x,y,w,h,color,isPlayer){
-  const cx=x+w/2;
+var player={x:170,y:530,w:36,h:68,speed:0,color:'#00bfff'};
+var cars=[],stars=[],score=0,best=0,gameSpeed=3,alive=true,aiMode=false;
+var aiDec=0,aiDodges=0,aiCrashes=0,aiReact=[];
+var frameCount=0;
+
+try{best=parseInt(localStorage.getItem('race_best')||'0')}catch(e){best=0}
+
+var COLORS=['#e74c3c','#c0392b','#3498db','#2980b9','#2ecc71','#27ae60','#f39c12','#e67e22','#9b59b6','#8e44ad','#1abc9c','#16a085','#ecf0f1','#bdc3c7','#d35400'];
+
+function drawCarShape(x,y,w,h,color,isPlayer){
+  var cx=x+w/2;
   // Shadow
-  ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(cx,y+h+3,w/2+4,6,0,0,Math.PI*2);ctx.fill();
-  // Body
-  ctx.fillStyle=color;ctx.shadowBlur=isPlayer?15:8;ctx.shadowColor=color;
-  ctx.beginPath();ctx.roundRect(x+2,y+h*0.3,w-4,h*0.55,6);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(cx,y+h+4,w/2+6,5,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Main body
+  ctx.fillStyle=color;
+  ctx.fillRect(x+3,y+h*0.25,w-6,h*0.6);
+  // Body darker top
+  ctx.fillStyle='rgba(0,0,0,0.2)';
+  ctx.fillRect(x+3,y+h*0.25,w-6,h*0.15);
+
   // Roof
-  ctx.fillStyle=isPlayer?'#1a3a5c':'#2a1a1a';
-  ctx.beginPath();ctx.roundRect(x+w*0.2,y+h*0.1,w*0.6,h*0.25,4);ctx.fill();
+  ctx.fillStyle=isPlayer?'#0d4f7a':'#1a0a0a';
+  ctx.fillRect(x+w*0.2,y+h*0.08,w*0.6,h*0.22);
+
   // Windshield
-  ctx.fillStyle='rgba(100,180,255,0.6)';
-  ctx.beginPath();ctx.roundRect(x+w*0.25,y+h*0.12,w*0.5,h*0.15,3);ctx.fill();
+  ctx.fillStyle='rgba(100,200,255,0.5)';
+  ctx.fillRect(x+w*0.22,y+h*0.1,w*0.56,h*0.14);
+  // Windshield shine
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.fillRect(x+w*0.25,y+h*0.11,w*0.15,h*0.12);
+
   // Rear window
-  ctx.fillStyle='rgba(100,180,255,0.4)';
-  ctx.beginPath();ctx.roundRect(x+w*0.25,y+h*0.62,w*0.5,h*0.12,3);ctx.fill();
+  ctx.fillStyle='rgba(100,200,255,0.35)';
+  ctx.fillRect(x+w*0.22,y+h*0.62,w*0.56,h*0.12);
+
   // Headlights
-  ctx.fillStyle='#ffe066';ctx.shadowColor='#ffe066';ctx.shadowBlur=6;
-  ctx.beginPath();ctx.roundRect(x+4,y+h*0.32,8,5,2);ctx.fill();
-  ctx.beginPath();ctx.roundRect(x+w-12,y+h*0.32,8,5,2);ctx.fill();
+  ctx.fillStyle='#ffe066';
+  ctx.shadowColor='#ffe066';
+  ctx.shadowBlur=8;
+  ctx.fillRect(x+4,y+h*0.27,7,6);
+  ctx.fillRect(x+w-11,y+h*0.27,7,6);
+  // Headlight beam
+  ctx.fillStyle='rgba(255,224,102,0.15)';
+  ctx.fillRect(x-2,y-10,w+4,30);
+
   // Taillights
-  ctx.fillStyle='#ff3333';ctx.shadowColor='#ff3333';ctx.shadowBlur=5;
-  ctx.beginPath();ctx.roundRect(x+4,y+h*0.8,8,5,2);ctx.fill();
-  ctx.beginPath();ctx.roundRect(x+w-12,y+h*0.8,8,5,2);ctx.fill();
+  ctx.fillStyle='#ff2222';
+  ctx.shadowColor='#ff2222';
+  ctx.shadowBlur=6;
+  ctx.fillRect(x+4,y+h*0.8,7,5);
+  ctx.fillRect(x+w-11,y+h*0.8,7,5);
+
+  // Tail glow
+  ctx.fillStyle='rgba(255,34,34,0.2)';
+  ctx.fillRect(x+2,y+h*0.85,w-4,10);
+
   ctx.shadowBlur=0;
+
   // Wheels
   ctx.fillStyle='#111';
-  ctx.fillRect(x-2,y+h*0.3,5,h*0.2);
-  ctx.fillRect(x+w-3,y+h*0.3,5,h*0.2);
-  ctx.fillRect(x-2,y+h*0.7,5,h*0.2);
-  ctx.fillRect(x+w-3,y+h*0.7,5,h*0.2);
-  // Wheel highlight
-  ctx.fillStyle='#333';
-  ctx.fillRect(x-1,y+h*0.35,3,h*0.1);
-  ctx.fillRect(x+w-2,y+h*0.35,3,h*0.1);
+  ctx.fillRect(x-3,y+h*0.28,5,h*0.18);
+  ctx.fillRect(x+w-2,y+h*0.28,5,h*0.18);
+  ctx.fillRect(x-3,y+h*0.72,5,h*0.18);
+  ctx.fillRect(x+w-2,y+h*0.72,5,h*0.18);
+  // Wheel shine
+  ctx.fillStyle='#222';
+  ctx.fillRect(x-2,y+h*0.32,3,h*0.08);
+  ctx.fillRect(x+w-1,y+h*0.32,3,h*0.08);
+  ctx.fillRect(x-2,y+h*0.76,3,h*0.08);
+  ctx.fillRect(x+w-1,y+h*0.76,3,h*0.08);
+
+  // Racing stripe for player
+  if(isPlayer){
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.fillRect(cx-2,y+h*0.28,4,h*0.55);
+  }
 }
 
-const CAR_COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#ecf0f1','#34495e','#d35400'];
-
-function spawnObs(){
-  const w=38+Math.random()*8;
-  const col=CAR_COLORS[Math.floor(Math.random()*CAR_COLORS.length)];
-  obs.push({x:road.x+15+Math.random()*(road.w-w-30),y:-80,w,h:65+Math.random()*15,col});
+function spawnCar(){
+  var w=34+Math.random()*8;
+  var col=COLORS[Math.floor(Math.random()*COLORS.length)];
+  var lane=Math.floor(Math.random()*3);
+  var lx=ROAD_L+lane*LW+LW/2-w/2;
+  // Avoid spawning on top of another car
+  for(var i=0;i<cars.length;i++){
+    if(Math.abs(cars[i].x-lx)<50&&cars[i].y<100)return;
+  }
+  cars.push({x:lx,y:-80,w:w,h:62+Math.random()*10,col:col});
 }
 
-document.addEventListener('keydown',e=>{ks[e.key]=true;if(go&&e.key===' ')restart()});
-document.addEventListener('keyup',e=>ks[e.key]=false);
+function drawRoad(){
+  // Grass
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a1f0a');g.addColorStop(1,'#0d2d0d');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 
-function restart(){go=false;sc=0;spd=3;obs=[];pl.x=180;aiDecisions=0;aiDodges=0;aiCrashes=0;aiReactions=[]}
+  // Road surface
+  ctx.fillStyle='#1a1a2e';
+  ctx.fillRect(ROAD_L,0,ROAD_W,H);
+
+  // Road texture lines
+  ctx.fillStyle='rgba(255,255,255,0.03)';
+  for(var i=0;i<H;i+=4){
+    ctx.fillRect(ROAD_L,i,ROAD_W,1);
+  }
+
+  // Road edges (orange glow)
+  ctx.fillStyle='#ff6600';
+  ctx.shadowColor='#ff6600';ctx.shadowBlur=12;
+  ctx.fillRect(ROAD_L-3,0,4,H);
+  ctx.fillRect(ROAD_R-1,0,4,H);
+  ctx.shadowBlur=0;
+
+  // Lane markings
+  var offset=(frameCount*gameSpeed)%60;
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  for(var i=-60;i<H+60;i+=60){
+    var yy=i+offset;
+    if(yy>0&&yy<H){
+      ctx.fillRect(ROAD_L+LW-1,yy,2,25);
+      ctx.fillRect(ROAD_L+LW*2-1,yy,2,25);
+    }
+  }
+}
+
+function drawHUD(){
+  // Score bar background
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.fillRect(0,0,W,32);
+
+  ctx.fillStyle='#fff';ctx.font='bold 14px Courier New';
+  ctx.textAlign='left';
+  ctx.fillText('SCORE: '+score,10,22);
+  ctx.textAlign='right';
+  ctx.fillText('BEST: '+best,W-10,22);
+  ctx.textAlign='center';
+  ctx.fillStyle='#ff6600';
+  ctx.fillText(Math.floor(gameSpeed*18)+' km/h',W/2,22);
+}
+
+function drawAIPanel(){
+  if(!aiMode)return;
+  var px=8,py=H-110,pw=W-16,ph=100;
+  ctx.fillStyle='rgba(0,0,0,0.85)';
+  ctx.fillRect(px,py,pw,ph);
+  ctx.strokeStyle='#ff6600';ctx.lineWidth=1;
+  ctx.strokeRect(px,py,pw,ph);
+
+  ctx.fillStyle='#ff6600';ctx.font='bold 12px Courier New';ctx.textAlign='left';
+  ctx.fillText('AI ANALYZER',px+8,py+16);
+
+  ctx.fillStyle='#fff';ctx.font='11px Courier New';
+  var avgR=aiReact.length>0?(aiReact.reduce(function(a,b){return a+b},0)/aiReact.length).toFixed(1):'0';
+  var acc=aiDodges+aiCrashes>0?Math.floor(aiDodges/(aiDodges+aiCrashes)*100):0;
+
+  ctx.fillText('Decisions: '+aiDec,px+8,py+34);
+  ctx.fillText('Dodges: '+aiDodges,px+8,py+50);
+  ctx.fillText('Crashes: '+aiCrashes,px+130,py+34);
+  ctx.fillText('React: '+avgR+'ms',px+130,py+50);
+
+  // Accuracy bar
+  ctx.fillStyle='#333';ctx.fillRect(px+8,py+60,pw-16,8);
+  ctx.fillStyle='#4caf50';ctx.fillRect(px+8,py+60,(pw-16)*acc/100,8);
+  ctx.fillStyle='#fff';ctx.font='10px Courier New';
+  ctx.fillText('Accuracy: '+acc+'%',px+8,py+80);
+
+  ctx.fillStyle=alive?'#4caf50':'#ff4444';
+  ctx.fillText('Status: '+(alive?'Playing':'Crashed @ '+score+'pts'),px+130,py+80);
+}
+
+function drawGameOver(){
+  ctx.fillStyle='rgba(0,0,0,0.8)';
+  ctx.fillRect(0,32,W,H-32);
+
+  ctx.fillStyle='#ff6600';ctx.font='bold 42px Courier New';ctx.textAlign='center';
+  ctx.fillText('GAME OVER',W/2,H/2-40);
+
+  ctx.fillStyle='#fff';ctx.font='18px Courier New';
+  ctx.fillText('Score: '+score,W/2,H/2+10);
+
+  ctx.fillStyle='#aaa';ctx.font='14px Courier New';
+  ctx.fillText('SPACE to restart | A for AI mode',W/2,H/2+50);
+
+  if(aiMode){
+    ctx.fillStyle='#ff6600';ctx.font='12px Courier New';
+    ctx.fillText('AI mode: ON — watching AI play...',W/2,H/2+80);
+  }
+}
 
 function aiControl(){
-  if(!aiMode||go)return;
-  const t0=performance.now();
-  let targetX=pl.x;
-  let bestDist=999;
-  obs.forEach(o=>{
-    if(o.y>200&&o.y<500){
-      const center=o.x+o.w/2;
-      if(Math.abs(center-(pl.x+pl.w/2))<60){
-        if(center<pl.x+pl.w/2)targetX=Math.min(pl.x+8,road.x+road.w-pl.w);
-        else targetX=Math.max(pl.x-8,road.x);
+  if(!aiMode||!alive)return;
+  var t0=performance.now();
+  var danger=false;
+  var dangerLeft=false;
+  for(var i=0;i<cars.length;i++){
+    var o=cars[i];
+    if(o.y>player.y-200&&o.y<player.y+player.h){
+      var ox=o.x+o.w/2;
+      var px2=player.x+player.w/2;
+      if(Math.abs(ox-px2)<55){
+        danger=true;
+        dangerLeft=ox>px2;
       }
     }
-  });
-  if(targetX!==pl.x){
-    pl.x+=(targetX>pl.x?1:-1)*4.5;
-    pl.x=Math.max(road.x,Math.min(road.x+road.w-pl.w,pl.x));
-    aiDecisions++;
-    aiReactions.push(performance.now()-t0);
+  }
+  if(danger){
+    if(dangerLeft&&player.x>ROAD_L+5)player.x-=5;
+    else if(!dangerLeft&&player.x<ROAD_R-player.w-5)player.x+=5;
+    aiDec++;
+    aiReact.push(performance.now()-t0);
   }
 }
 
 function update(){
-  if(go)return;
-  aiControl();
-  if(!aiMode){if(ks['ArrowLeft']&&pl.x>road.x)pl.x-=5;if(ks['ArrowRight']&&pl.x<road.x+road.w-pl.w)pl.x+=5}
-  road.lines.forEach(l=>{l.y+=spd;if(l.y>600)l.y=-100});
-  if(sc%50===0&&sc>0)spd=Math.min(spd+.15,9);
-  if(Math.random()<.025)spawnObs();
-  obs=obs.filter(o=>o.y<650);
-  obs.forEach(o=>{o.y+=spd;
-    if(pl.x<o.x+o.w&&pl.x+pl.w>o.x&&pl.y<o.y+o.h&&pl.y+pl.h>o.y){
-      go=true;aiCrashes++;
-      if(sc>hi){hi=sc;try{localStorage.setItem('rh2',String(hi))}catch(e){}}
-    }
-  });
-  sc++;aiTimer++;
-  if(sc%60===0&&obs.length>0)aiDodges++;
-  document.getElementById('sc').textContent='Score: '+sc;
-  document.getElementById('hi').textContent='Best: '+hi;
-  document.getElementById('spd').textContent=Math.floor(spd*18)+' km/h';
-}
+  frameCount++;
+  if(!alive)return;
 
-function drawAI(){
-  if(!aiMode)return;
-  const panel=document.getElementById('ai-panel');
-  panel.style.display='block';
-  const avgReact=aiReactions.length>0?(aiReactions.reduce((a,b)=>a+b,0)/aiReactions.length).toFixed(0):'0';
-  const acc=Math.min(100,Math.floor((aiDecisions/(aiDecisions+aiCrashes+1))*100));
-  const dodgeRate=aiTimer>0?Math.min(100,Math.floor((aiDodges/Math.max(1,obs.length))*100)):0;
-  document.getElementById('ai-react').textContent=avgReact;
-  document.getElementById('ai-accT').textContent=acc;
-  document.getElementById('ai-dodgeT').textContent=dodgeRate;
-  document.getElementById('ai-dec').textContent=aiDecisions;
-  document.getElementById('ai-crash').textContent=aiCrashes;
-  document.getElementById('ai-acc').style.width=acc+'%';
-  document.getElementById('ai-dodge').style.width=dodgeRate+'%';
-  document.getElementById('ai-status').textContent=go?'Crashed after '+sc+' frames':aiMode?'Analyzing...':'Idle';
+  aiControl();
+
+  if(!aiMode){
+    if(keys.ArrowLeft&&player.x>ROAD_L+2)player.x-=5;
+    if(keys.ArrowRight&&player.x<ROAD_R-player.w-2)player.x+=5;
+  }
+
+  gameSpeed=3+Math.floor(score/80)*0.15;
+  if(gameSpeed>9)gameSpeed=9;
+
+  if(frameCount%Math.max(20,50-Math.floor(score/20))===0)spawnCar();
+
+  for(var i=cars.length-1;i>=0;i--){
+    cars[i].y+=gameSpeed;
+    if(cars[i].y>H+100){cars.splice(i,1);continue}
+
+    var o=cars[i];
+    if(player.x<o.x+o.w&&player.x+player.w>o.x&&player.y<o.y+o.h&&player.y+player.h>o.y){
+      alive=false;
+      aiCrashes++;
+      if(score>best){best=score;try{localStorage.setItem('race_best',String(best))}catch(e){}}
+    }
+  }
+
+  score++;
 }
 
 function draw(){
-  // Road
-  ctx.fillStyle='#1a1a2e';ctx.fillRect(road.x,0,road.w,600);
-  // Road edges
-  ctx.fillStyle='#ff6b00';ctx.fillRect(road.x-2,0,4,600);ctx.fillRect(road.x+road.w-2,0,4,600);
-  // Lane markings
-  road.lines.forEach(l=>{
-    ctx.fillStyle='#fff';ctx.globalAlpha=0.5;
-    ctx.fillRect(road.x+road.w/3-1,l.y,2,35);
-    ctx.fillRect(road.x+road.w*2/3-1,l.y,2,35);
-    ctx.globalAlpha=1;
-  });
-  // Grass
-  ctx.fillStyle='#0d3318';ctx.fillRect(0,0,road.x,600);ctx.fillRect(road.x+road.w,0,400,600);
-  // Obstacle cars
-  obs.forEach(o=>drawCar(o.x,o.y,o.w,o.h,o.col,false));
-  // Player car
-  drawCar(pl.x,pl.y,pl.w,pl.h,'${c.primary}',true);
-  // AI mode indicator
-  if(aiMode){ctx.fillStyle='${c.accent}';ctx.font='bold 12px Courier New';ctx.textAlign='center';ctx.fillText('AI ANALYZING',200,15)}
-  // Game over
-  if(go){ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,400,600);ctx.fillStyle='${c.accent}';ctx.font='bold 36px Courier New';ctx.textAlign='center';ctx.fillText('GAME OVER',200,260);ctx.font='16px Courier New';ctx.fillStyle='#fff';ctx.fillText('Score: '+sc+' | SPACE',200,310)}
-  drawAI();
+  drawRoad();
+  // Cars
+  for(var i=0;i<cars.length;i++){
+    drawCarShape(cars[i].x,cars[i].y,cars[i].w,cars[i].h,cars[i].col,false);
+  }
+  // Player
+  drawCarShape(player.x,player.y,player.w,player.h,player.color,true);
+
+  drawHUD();
+  drawAIPanel();
+  if(!alive)drawGameOver();
+
   requestAnimationFrame(draw);
 }
 
-// SPACE toggles AI mode when game is over, or restarts
-document.addEventListener('keydown',e=>{
-  if(e.key===' '&&go){aiMode=!aiMode;restart()}
-  if(e.key==='a'||e.key==='A'){aiMode=!aiMode;document.getElementById('ai-panel').style.display=aiMode?'block':'none'}
+var keys={};
+document.addEventListener('keydown',function(e){
+  keys[e.key]=true;
+  if(e.key===' '&&!alive){
+    alive=true;score=0;gameSpeed=3;cars=[];
+    player.x=170;
+    aiDec=0;aiDodges=0;aiCrashes=0;aiReact=[];
+  }
+  if(e.key==='a'||e.key==='A'){aiMode=!aiMode}
+  e.preventDefault();
 });
-setInterval(update,16);draw();</script></body></html>`
+document.addEventListener('keyup',function(e){keys[e.key]=false});
+
+setInterval(update,16);
+draw();
+</script></body></html>`
   };
 }
 
