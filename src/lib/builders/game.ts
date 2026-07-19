@@ -323,7 +323,7 @@ document.addEventListener('keyup',e=>ks[e.key]=false);
 function restart(){go=false;sc=0;obs=[];coins=[];x=80;y=280;vy=0}
 function update(){if(go)return;vy+=g;y+=vy;if(y>ground-h){y=ground-h;vy=0}if(y===ground-h&&(ks['ArrowUp']||ks[' ']))vy=jmp;
 if(ks['ArrowLeft']&&x>0)x-=4;if(ks['ArrowRight']&&x<665)x+=4;
-obs=obs.filter(o=>o.x>-50);if(sc%80===0&&!gameOver){let oh=30+Math.random()*30;obs.push({x:700,y:ground-oh,w:25+Math.random()*15,h:oh})}
+obs=obs.filter(o=>o.x>-50);if(sc%80===0&&!go){let oh=30+Math.random()*30;obs.push({x:700,y:ground-oh,w:25+Math.random()*15,h:oh})}
 if(Math.random()<.02&&coins.length<5)coins.push({x:700,y:ground-40-Math.random()*100,r:8});
 obs.forEach(o=>{o.x-=4+sc/200;if(x<o.x+o.w&&x+w>o.x&&y<o.y+o.h&&y+h>o.y)go=true});
 coins.forEach(cn=>{cn.x-=4+sc/200;if(Math.abs(x+w/2-cn.x)<w/2+cn.r&&Math.abs(y+h/2-cn.y)<h/2+cn.r){sc+=20;cn.x=-100}});
