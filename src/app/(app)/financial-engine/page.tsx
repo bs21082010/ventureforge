@@ -191,7 +191,7 @@ export default function FinancialEnginePage() {
 
       {/* Summary Cards */}
       {summary && (
-        <motion.div variants={item} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <motion.div variants={item} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[
             { label: "Total Revenue", value: formatCurrency(summary.totalRevenue), color: "text-green-400", bg: "from-green-900/30 to-green-950/20" },
             { label: "Total Expenses", value: formatCurrency(summary.totalExpenses), color: "text-red-400", bg: "from-red-900/30 to-red-950/20" },

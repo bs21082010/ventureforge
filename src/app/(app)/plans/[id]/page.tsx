@@ -180,27 +180,27 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-100">{planMeta.title}</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-100">{planMeta.title}</h1>
             <Badge variant={STATUS_COLORS[planMeta.status]}>{planMeta.status.replace(/_/g, " ")}</Badge>
           </div>
-          <p className="mt-1 text-sm text-gray-400">{planMeta.description}</p>
-          <div className="mt-2 flex gap-2">
+          <p className="mt-1 text-xs sm:text-sm text-gray-400">{planMeta.description}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
             <Badge variant="default">{planMeta.industry}</Badge>
             <Badge variant="default">{planMeta.region}</Badge>
             <Badge variant="default">v{planMeta.version}</Badge>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPDF}>Export PDF</Button>
           <Button variant="primary" size="sm" onClick={handlePublish}>Publish</Button>
           <Button variant="ghost" size="sm" onClick={handleInviteCollab}>Invite</Button>
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-2 overflow-x-auto">
         {(["sections", "financials", "ai", "compliance"] as const).map((tab) => (
           <Button key={tab} variant={activeTab === tab ? "primary" : "ghost"} size="sm" onClick={() => setActiveTab(tab)}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}

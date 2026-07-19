@@ -151,11 +151,11 @@ export default function ResearchHubPage() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button size="sm" variant={depth === "quick" ? "default" : "outline"} onClick={() => setDepth("quick")}>Quick Scan</Button>
               <Button size="sm" variant={depth === "deep" ? "default" : "outline"} onClick={() => setDepth("deep")}>Deep Dive</Button>
-              <div className="flex-1" />
-              <Button onClick={generate} disabled={loading || !topic.trim()}>
+              <div className="flex-1 hidden sm:block" />
+              <Button onClick={generate} disabled={loading || !topic.trim()} className="sm:ml-auto">
                 {loading ? "Researching..." : "Research"}
               </Button>
             </div>

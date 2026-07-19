@@ -16,13 +16,13 @@ export default function PricingPage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           No payment required
         </div>
-        <h1 className="text-4xl font-bold tracking-tight">Free Forever</h1>
-        <p className="text-lg text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Free Forever</h1>
+        <p className="text-sm sm:text-lg text-muted-foreground">
           Every feature, every tool, every update — completely free. No credit card, no time limit, no catch.
         </p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-6xl font-bold">$0</span>
-          <span className="text-muted-foreground text-lg">/month</span>
+          <span className="text-4xl sm:text-5xl md:text-6xl font-bold">$0</span>
+          <span className="text-muted-foreground text-sm sm:text-lg">/month</span>
         </div>
       </div>
 

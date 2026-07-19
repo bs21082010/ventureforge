@@ -47,12 +47,12 @@ export default function CollaborativePage() {
       {toast && (
         <div className="fixed right-4 top-4 z-50 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg">{toast}</div>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Collaborative Dashboard</h1>
-          <p className="text-sm text-gray-400">Multi-user editing and real-time collaboration</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Collaborative Dashboard</h1>
+          <p className="text-xs sm:text-sm text-gray-400">Multi-user editing and real-time collaboration</p>
         </div>
-        <Button variant="primary" onClick={() => showToast("Invitation link copied to clipboard")}>Invite Collaborator</Button>
+        <Button variant="primary" onClick={() => showToast("Invitation link copied to clipboard")} className="w-full sm:w-auto">Invite Collaborator</Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -80,7 +80,7 @@ export default function CollaborativePage() {
                         <p className="text-xs text-gray-400">{user.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant={STATUS_COLORS[user.status]}>{user.status}</Badge>
                       <Badge variant="default">{user.role}</Badge>
                       <span className="text-xs text-gray-400">{user.lastActive}</span>

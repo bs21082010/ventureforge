@@ -28,7 +28,7 @@ export default function StudioHubPage() {
     <motion.div variants={container} initial="hidden" animate="visible" className="space-y-10">
       <motion.div variants={item} className="text-center space-y-3">
         <p className="text-xs text-blue-400 uppercase tracking-[0.2em] font-share-tech-mono">VentureForge Studio</p>
-        <h1 className="text-4xl font-bold">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
           <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
             Creation Studio
           </span>

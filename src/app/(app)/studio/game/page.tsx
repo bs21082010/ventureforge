@@ -143,7 +143,7 @@ export default function GameStudioPage() {
                     <iframe
                       srcDoc={result.html}
                       title={result.title}
-                      className="w-full h-[500px] bg-black"
+                      className="w-full h-[300px] sm:h-[400px] lg:h-[500px] bg-black"
                       sandbox="allow-scripts"
                     />
                   </div>

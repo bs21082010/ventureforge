@@ -154,7 +154,7 @@ export default function NewPlanPage() {
 
             {city && (
               <div className="rounded-lg border border-blue-800/30 bg-blue-900/20 p-3">
-                <div className="grid grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs">
                   <div><span className="text-gray-400">Currency:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.currency}</span></div>
                   <div><span className="text-gray-400">Language:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.language}</span></div>
                   <div><span className="text-gray-400">Market:</span> <span className="text-gray-200">{REGIONS.find(r => r.id === city)?.economicProfile.marketSize}</span></div>

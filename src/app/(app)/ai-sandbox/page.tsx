@@ -60,7 +60,7 @@ export default function AISandboxPage() {
         <p className="text-sm text-gray-400">AI-powered creativity and predictive foresight</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant={activeTab === "creativity" ? "primary" : "outline"}
           onClick={() => setActiveTab("creativity")}

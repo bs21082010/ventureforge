@@ -63,25 +63,23 @@ export default function PlansPage() {
       {toast && (
         <div className="fixed right-4 top-4 z-50 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg">{toast}</div>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Business Plans</h1>
-          <p className="text-sm text-gray-400">Manage all your business plans in one place</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Business Plans</h1>
+          <p className="text-xs sm:text-sm text-gray-400">Manage all your business plans in one place</p>
         </div>
         <Link href="/plans/new">
-          <Button variant="primary">Create New Plan</Button>
+          <Button variant="primary" className="w-full sm:w-auto">Create New Plan</Button>
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Search plans by title or industry..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3">
+        <Input
+          placeholder="Search plans by title or industry..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="flex flex-wrap gap-2">
           {["ALL", "DRAFT", "IN_REVIEW", "APPROVED", "CERTIFIED"].map((s) => (
             <Button
               key={s}
@@ -128,7 +126,7 @@ export default function PlansPage() {
       )}
 
       {!loading && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-white/10 bg-black/40 backdrop-blur-xl p-12 text-center">
+        <div className="rounded-xl border border-dashed border-white/10 bg-black/40 backdrop-blur-xl p-6 sm:p-12 text-center">
           <p className="text-gray-400">No plans found. Create your first business plan!</p>
         </div>
       )}
