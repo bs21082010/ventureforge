@@ -1,4 +1,4 @@
-import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { aiChat, aiJsonCompletion, isAnyAI } from "@/lib/ai/ai-client";
 
 export interface GameRequest {
   prompt: string;
@@ -14,6 +14,52 @@ export interface GameResult {
   techStack: string[];
 }
 
+async function generateGameWithAI(request: GameRequest, analysis: any, dim: string): Promise<GameResult | null> {
+  const systemPrompt = `You are an expert HTML5 game developer. Generate complete, playable games as a single HTML file.
+
+Tech requirements:
+- HTML5 structure with Canvas element
+- CSS3 for all styling, animations, visual effects
+- JavaScript for game logic, physics, input handling, collision detection, scoring
+- ${dim === "3d" ? "WebGL for GPU-accelerated 3D rendering with shaders, perspective projection, lighting" : "Canvas 2D rendering with sprites, particles, gradients, shadows"}
+
+The game MUST:
+- Be a complete, working game — no placeholders, no TODO comments
+- Include score tracking, game over state, and restart functionality
+- Match the user's prompt: theme, characters, setting, colors, mechanics
+- Use smooth animations and visual polish (particles, glow effects, etc.)
+- Handle keyboard/mouse/touch input appropriately
+- Work in a sandboxed iframe (no external dependencies)
+
+Return ONLY valid JSON: {"html":"full HTML document","title":"game title","description":"short description","instructions":"how to play","techStack":["HTML5","CSS3","JavaScript","${dim === "3d" ? "WebGL" : "Canvas 2D"}"]}`;
+
+  const userPrompt = `Create a complete, playable ${dim.toUpperCase()} game based on this description: "${request.prompt}"
+
+Genre: ${request.genre || "auto-detect"}
+Theme/setting: ${analysis.theme || "custom"}
+Colors: primary=${analysis.colors.primary}, secondary=${analysis.colors.secondary}, accent=${analysis.colors.accent}
+Mechanics: ${analysis.mechanics?.join(", ") || "various"}
+Character: ${analysis.characterName || "Player"}
+
+The game SHOULD reflect these specific details from the prompt. Make it unique, not a generic template.`;
+
+  const available = await isAnyAI();
+  if (!available) return null;
+
+  try {
+    const result = await aiJsonCompletion<GameResult>(systemPrompt, userPrompt, {
+      temperature: 0.8,
+      maxTokens: 8192,
+    });
+    if (!result.html || !result.title) return null;
+    result.techStack = result.techStack || ["HTML5", "CSS3", "JavaScript", dim === "3d" ? "WebGL" : "Canvas 2D"];
+    return result;
+  } catch (err) {
+    console.error("AI game generation failed:", err);
+    return null;
+  }
+}
+
 function analyzePrompt(prompt: string): {
   title: string;
   theme: string;
@@ -24,7 +70,6 @@ function analyzePrompt(prompt: string): {
 } {
   const p = prompt.toLowerCase();
 
-  // Extract title
   const titleMatch = p.match(/(?:called|named|titled|叫|名)\s+["""]?([^""",.]+?)[""""]?(?:\s|,|\.|$)/i);
   let title: string;
   if (titleMatch) {
@@ -33,16 +78,9 @@ function analyzePrompt(prompt: string): {
     title = extractTitle(p);
   }
 
-  // Extract theme/setting
   const setting = extractSetting(p);
-
-  // Extract color preferences
   const colors = extractColors(p);
-
-  // Extract game mechanics
   const mechanics = extractMechanics(p);
-
-  // Extract character/subject
   const characterName = extractCharacter(p);
 
   return { title, theme: setting, colors, mechanics, setting, characterName };
@@ -96,7 +134,6 @@ function extractColors(p: string): { primary: string; secondary: string; bg: str
     if (p.includes(name)) return colors;
   }
 
-  // Default based on setting
   return { primary: '#4fc3f7', secondary: '#81d4fa', bg: '#0a0a1a', accent: '#ff6b35' };
 }
 
@@ -146,7 +183,6 @@ function generateGameLocal(request: GameRequest): GameResult {
 
   if (is3D) return generate3DGame(analysis, p, genre, c);
 
-  // Genre-based generation with prompt customization
   if (genre === "shooter" || p.match(/shoot|gun|laser|bullet|attack|fight/)) return generateShooterGame(analysis, c);
   if (genre === "racing" || p.match(/race|car|drive|speed|road|track/)) return generateRacingGame(analysis, c);
   if (genre === "puzzle" || p.match(/puzzle|match|tile|2048|connect|logic/)) return generatePuzzleGame(analysis, c);
@@ -155,9 +191,22 @@ function generateGameLocal(request: GameRequest): GameResult {
   if (genre === "flappy" || p.match(/flap|bird|fly|wing|tap/)) return generateFlappyGame(analysis, c);
   if (genre === "tetris" || p.match(/tetris|block|fall|stack|line/)) return generateTetrisGame(analysis, c);
 
-  // Default: platformer (most versatile)
   return generatePlatformerGame(analysis, c);
 }
+
+export async function generateGame(request: GameRequest): Promise<GameResult> {
+  const dim = request.dimension || "2d";
+  const analysis = analyzePrompt(request.prompt);
+
+  // Try AI generation first (DeepSeek → Gemini → OpenAI/Ollama)
+  const aiResult = await generateGameWithAI(request, analysis, dim);
+  if (aiResult) return aiResult;
+
+  // Fall back to local template
+  return generateGameLocal(request);
+}
+
+// ============ 3D GAME GENERATORS ============
 
 function generate3DGame(analysis: any, p: string, genre: string, c: any): GameResult {
   const { title, characterName, mechanics } = analysis;
@@ -394,16 +443,12 @@ var cv=document.getElementById('g'),ctx=cv.getContext('2d');
 var W=400,H=650;
 var ROAD_L=60,ROAD_W=280,ROAD_R=ROAD_L+ROAD_W,LW=ROAD_W/3;
 var RL=ROAD_L,RR=ROAD_R,RW=ROAD_W;
-
 var player={x:170,y:530,w:36,h:68,speed:0,color:'#00bfff'};
 var cars=[],stars=[],score=0,best=0,gameSpeed=3,alive=true,aiMode=false;
 var aiDec=0,aiDodges=0,aiCrashes=0,aiReact=[];
 var frameCount=0;
-
 try{best=parseInt(localStorage.getItem('race_best')||'0')}catch(e){best=0}
-
 var COLORS=['#e74c3c','#c0392b','#3498db','#2980b9','#2ecc71','#27ae60','#f39c12','#e67e22','#9b59b6','#8e44ad','#1abc9c','#16a085','#ecf0f1','#bdc3c7','#d35400'];
-
 function drawCarShape(x,y,w,h,color,isPlayer){
   var cx=Math.floor(x+w/2);
   ctx.fillStyle='#000';ctx.fillRect(x+2,y+h,w-4,3);
@@ -437,19 +482,16 @@ function drawCarShape(x,y,w,h,color,isPlayer){
   ctx.fillRect(x+w-9,y+Math.floor(h*0.85),6,5);
   if(isPlayer){ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(cx-1,y+Math.floor(h*0.3),2,Math.floor(h*0.5))}
 }
-
 function spawnCar(){
   var w=34+Math.random()*8;
   var col=COLORS[Math.floor(Math.random()*COLORS.length)];
   var lane=Math.floor(Math.random()*3);
   var lx=ROAD_L+lane*LW+LW/2-w/2;
-  // Avoid spawning on top of another car
   for(var i=0;i<cars.length;i++){
     if(Math.abs(cars[i].x-lx)<50&&cars[i].y<100)return;
   }
   cars.push({x:lx,y:-80,w:w,h:62+Math.random()*10,col:col});
 }
-
 function drawRoad(){
   ctx.fillStyle='#0d2d0d';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#0a1f0a';ctx.fillRect(0,0,RL,H);ctx.fillRect(RR,0,W-RR,H);
@@ -460,155 +502,97 @@ function drawRoad(){
   ctx.fillStyle='#fff';
   for(var i=-60;i<H+60;i+=60){var yy=i+off;if(yy>0&&yy<H){ctx.fillRect(RL+LW-1,yy,2,22);ctx.fillRect(RL+LW*2-1,yy,2,22)}}
 }
-
 function drawHUD(){
-  // Score bar background
-  ctx.fillStyle='rgba(0,0,0,0.7)';
-  ctx.fillRect(0,0,W,32);
-
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,32);
   ctx.fillStyle='#fff';ctx.font='bold 14px Courier New';
-  ctx.textAlign='left';
-  ctx.fillText('SCORE: '+score,10,22);
-  ctx.textAlign='right';
-  ctx.fillText('BEST: '+best,W-10,22);
-  ctx.textAlign='center';
-  ctx.fillStyle='#ff6600';
-  ctx.fillText(Math.floor(gameSpeed*18)+' km/h',W/2,22);
+  ctx.textAlign='left';ctx.fillText('SCORE: '+score,10,22);
+  ctx.textAlign='right';ctx.fillText('BEST: '+best,W-10,22);
+  ctx.textAlign='center';ctx.fillStyle='#ff6600';ctx.fillText(Math.floor(gameSpeed*18)+' km/h',W/2,22);
 }
-
 function drawAIPanel(){
   if(!aiMode)return;
   var px=8,py=H-110,pw=W-16,ph=100;
-  ctx.fillStyle='rgba(0,0,0,0.9)';
-  ctx.fillRect(px,py,pw,ph);
-  ctx.fillStyle='#ff6600';
-  ctx.fillRect(px,py,pw,1);ctx.fillRect(px,py+ph-1,pw,1);ctx.fillRect(px,py,1,ph);ctx.fillRect(px+pw-1,py,1,ph);
-
+  ctx.fillStyle='rgba(0,0,0,0.9)';ctx.fillRect(px,py,pw,ph);
+  ctx.fillStyle='#ff6600';ctx.fillRect(px,py,pw,1);ctx.fillRect(px,py+ph-1,pw,1);ctx.fillRect(px,py,1,ph);ctx.fillRect(px+pw-1,py,1,ph);
   ctx.fillStyle='#ff6600';ctx.font='bold 12px Courier New';ctx.textAlign='left';
   ctx.fillText('AI ANALYZER',px+8,py+16);
-
   ctx.fillStyle='#fff';ctx.font='11px Courier New';
   var avgR=aiReact.length>0?(aiReact.reduce(function(a,b){return a+b},0)/aiReact.length).toFixed(1):'0';
   var acc=aiDodges+aiCrashes>0?Math.floor(aiDodges/(aiDodges+aiCrashes)*100):0;
-
   ctx.fillText('Decisions: '+aiDec,px+8,py+34);
   ctx.fillText('Dodges: '+aiDodges,px+8,py+50);
   ctx.fillText('Crashes: '+aiCrashes,px+130,py+34);
   ctx.fillText('React: '+avgR+'ms',px+130,py+50);
-
-  // Accuracy bar
   ctx.fillStyle='#333';ctx.fillRect(px+8,py+60,pw-16,8);
   ctx.fillStyle='#4caf50';ctx.fillRect(px+8,py+60,(pw-16)*acc/100,8);
-  ctx.fillStyle='#fff';ctx.font='10px Courier New';
-  ctx.fillText('Accuracy: '+acc+'%',px+8,py+80);
-
+  ctx.fillStyle='#fff';ctx.font='10px Courier New';ctx.fillText('Accuracy: '+acc+'%',px+8,py+80);
   ctx.fillStyle=alive?'#4caf50':'#ff4444';
   ctx.fillText('Status: '+(alive?'Playing':'Crashed @ '+score+'pts'),px+130,py+80);
 }
-
 function drawGameOver(){
-  ctx.fillStyle='rgba(0,0,0,0.8)';
-  ctx.fillRect(0,32,W,H-32);
-
+  ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,32,W,H-32);
   ctx.fillStyle='#ff6600';ctx.font='bold 42px Courier New';ctx.textAlign='center';
   ctx.fillText('GAME OVER',W/2,H/2-40);
-
-  ctx.fillStyle='#fff';ctx.font='18px Courier New';
-  ctx.fillText('Score: '+score,W/2,H/2+10);
-
-  ctx.fillStyle='#aaa';ctx.font='14px Courier New';
-  ctx.fillText('SPACE to restart | A for AI mode',W/2,H/2+50);
-
-  if(aiMode){
-    ctx.fillStyle='#ff6600';ctx.font='12px Courier New';
-    ctx.fillText('AI mode: ON — watching AI play...',W/2,H/2+80);
-  }
+  ctx.fillStyle='#fff';ctx.font='18px Courier New';ctx.fillText('Score: '+score,W/2,H/2+10);
+  ctx.fillStyle='#aaa';ctx.font='14px Courier New';ctx.fillText('SPACE to restart | A for AI mode',W/2,H/2+50);
+  if(aiMode){ctx.fillStyle='#ff6600';ctx.font='12px Courier New';ctx.fillText('AI mode: ON — watching AI play...',W/2,H/2+80)}
 }
-
 function aiControl(){
   if(!aiMode||!alive)return;
   var t0=performance.now();
-  var danger=false;
-  var dangerLeft=false;
+  var danger=false,dangerLeft=false;
   for(var i=0;i<cars.length;i++){
     var o=cars[i];
     if(o.y>player.y-200&&o.y<player.y+player.h){
-      var ox=o.x+o.w/2;
-      var px2=player.x+player.w/2;
-      if(Math.abs(ox-px2)<55){
-        danger=true;
-        dangerLeft=ox>px2;
-      }
+      var ox=o.x+o.w/2,px2=player.x+player.w/2;
+      if(Math.abs(ox-px2)<55){danger=true;dangerLeft=ox>px2}
     }
   }
   if(danger){
     if(dangerLeft&&player.x>ROAD_L+5)player.x-=5;
     else if(!dangerLeft&&player.x<ROAD_R-player.w-5)player.x+=5;
-    aiDec++;
-    aiReact.push(performance.now()-t0);
+    aiDec++;aiReact.push(performance.now()-t0);
   }
 }
-
 function update(){
-  frameCount++;
-  if(!alive)return;
-
+  frameCount++;if(!alive)return;
   aiControl();
-
   if(!aiMode){
     if(keys.ArrowLeft&&player.x>ROAD_L+2)player.x-=5;
     if(keys.ArrowRight&&player.x<ROAD_R-player.w-2)player.x+=5;
   }
-
-  gameSpeed=3+Math.floor(score/80)*0.15;
-  if(gameSpeed>9)gameSpeed=9;
-
+  gameSpeed=3+Math.floor(score/80)*0.15;if(gameSpeed>9)gameSpeed=9;
   if(frameCount%Math.max(20,50-Math.floor(score/20))===0)spawnCar();
-
   for(var i=cars.length-1;i>=0;i--){
     cars[i].y+=gameSpeed;
     if(cars[i].y>H+100){cars.splice(i,1);continue}
-
     var o=cars[i];
     if(player.x<o.x+o.w&&player.x+player.w>o.x&&player.y<o.y+o.h&&player.y+player.h>o.y){
-      alive=false;
-      aiCrashes++;
+      alive=false;aiCrashes++;
       if(score>best){best=score;try{localStorage.setItem('race_best',String(best))}catch(e){}}
     }
   }
-
   score++;
 }
-
 function draw(){
   drawRoad();
-  // Cars
-  for(var i=0;i<cars.length;i++){
-    drawCarShape(cars[i].x,cars[i].y,cars[i].w,cars[i].h,cars[i].col,false);
-  }
-  // Player
+  for(var i=0;i<cars.length;i++)drawCarShape(cars[i].x,cars[i].y,cars[i].w,cars[i].h,cars[i].col,false);
   drawCarShape(player.x,player.y,player.w,player.h,player.color,true);
-
-  drawHUD();
-  drawAIPanel();
+  drawHUD();drawAIPanel();
   if(!alive)drawGameOver();
-
   requestAnimationFrame(draw);
 }
-
 var keys={};
 document.addEventListener('keydown',function(e){
   keys[e.key]=true;
   if(e.key===' '&&!alive){
-    alive=true;score=0;gameSpeed=3;cars=[];
-    player.x=170;
+    alive=true;score=0;gameSpeed=3;cars=[];player.x=170;
     aiDec=0;aiDodges=0;aiCrashes=0;aiReact=[];
   }
-  if(e.key==='a'||e.key==='A'){aiMode=!aiMode}
+  if(e.key==='a'||e.key==='A')aiMode=!aiMode;
   e.preventDefault();
 });
 document.addEventListener('keyup',function(e){keys[e.key]=false});
-
 setInterval(update,16);
 draw();
 </script></body></html>`
@@ -752,73 +736,26 @@ function generateTetrisGame(analysis: any, c: any): GameResult {
     instructions: "Arrow keys to move, UP to rotate, SPACE for hard drop",
     techStack: ["HTML5", "CSS3", "JavaScript", "Canvas 2D"],
     html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{background:${c.bg};display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Courier New',monospace}canvas{border:2px solid ${c.accent};border-radius:4px;background:${c.bg}}</style></head><body>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:${c.bg};display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Courier New',monospace}canvas{border:2px solid ${c.accent}}#hud{position:absolute;top:10px;left:10px;color:${c.accent};font-size:14px}</style></head><body><div id="hud">Score: <span id="sc">0</span></div>
 <canvas id="g" width="300" height="600"></canvas><script>
 const ctx=document.getElementById('g').getContext('2d'),COLS=10,ROWS=20,SZ=30;
-const COLORS=['#000','${c.primary}','${c.secondary}','${c.accent}','#ffaa00','#aa00ff','#ff5500','#00ff00'];
-const SHAPES=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]]];
-let grid=Array(ROWS).fill(null).map(()=>Array(COLS).fill(0)),piece,px,py,col,sc=0,go=false,dt=0;
-function spawn(){const i=Math.floor(Math.random()*SHAPES.length);piece=SHAPES[i].map(r=>[...r]);col=i+1;px=Math.floor((COLS-piece[0].length)/2);py=0;if(coll(piece,px,py))go=true}
-function coll(p,ox,oy){for(let r=0;r<p.length;r++)for(let c=0;c<p[r].length;c++)if(p[r][c]){const nx=ox+c,ny=oy+r;if(nx<0||nx>=COLS||ny>=ROWS)return true;if(ny>=0&&grid[ny][nx])return true}return false}
-function lock(){piece.forEach((row,r)=>row.forEach((v,c)=>{if(v&&py+r>=0)grid[py+r][px+c]=col}));let cl=0;
-for(let r=ROWS-1;r>=0;r--){if(grid[r].every(v=>v)){grid.splice(r,1);grid.unshift(Array(COLS).fill(0));cl++;r++}}sc+=cl*cl*100;spawn()}
-function rot(p){const rows=p.length,cols=p[0].length;return Array(cols).fill(null).map((_,c)=>Array(rows).fill(null).map((_,r)=>p[rows-1-r][c]))}
-document.addEventListener('keydown',e=>{if(go){grid=Array(ROWS).fill(null).map(()=>Array(COLS).fill(0));sc=0;go=false;spawn();return}
-if(e.key==='ArrowLeft'&&!coll(piece,px-1,py))px--;if(e.key==='ArrowRight'&&!coll(piece,px+1,py))px++;
-if(e.key==='ArrowDown'){while(!coll(piece,px,py+1))py++;lock()}
-if(e.key==='ArrowUp'){const r=rot(piece);if(!coll(r,px,py))piece=r}
-if(e.key===' '){while(!coll(piece,px,py+1))py++;lock()}});
-function update(){if(go)return;dt++;if(dt>=30){dt=0;if(!coll(piece,px,py+1))py++;else lock()}}
-function draw(){ctx.fillStyle='${c.bg}';ctx.fillRect(0,0,300,600);
-grid.forEach((row,r)=>row.forEach((v,c)=>{if(v){ctx.fillStyle=COLORS[v];ctx.fillRect(c*SZ,r*SZ,SZ-1,SZ-1);ctx.strokeStyle='#fff';ctx.lineWidth=.5;ctx.strokeRect(c*SZ,r*SZ,SZ-1,SZ-1)}}));
-if(piece){ctx.fillStyle=COLORS[col];piece.forEach((row,r)=>row.forEach((v,c)=>{if(v)ctx.fillRect((px+c)*SZ,(py+r)*SZ,SZ-1,SZ-1)}))}
-ctx.fillStyle='#fff';ctx.font='bold 16px Courier New';ctx.textAlign='left';ctx.fillText('Score: '+sc,10,25);
-if(go){ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(0,0,300,600);ctx.fillStyle='${c.accent}';ctx.font='bold 28px Courier New';ctx.textAlign='center';ctx.fillText('GAME OVER',150,290);ctx.fillStyle='#fff';ctx.font='14px Courier New';ctx.fillText('Press any key',150,320)}
+let board=Array(ROWS).fill().map(()=>Array(COLS).fill(0)),sc=0,go=false;
+const PIECES=[[[1,1,1,1]],[[1,1],[1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]],[[0,1,0],[1,1,1]]];
+const COLORS={1:'${c.primary}',2:'${c.secondary}',3:'${c.accent}',4:'#ffeb3b',5:'#ff9800',6:'#e91e63',7:'#9c27b0'};
+let cur={p:PIECES[Math.floor(Math.random()*PIECES.length)],x:3,y:0,type:1};
+function collide(b,p,x,y){for(let r=0;r<p.length;r++)for(let c=0;c<p[r].length;c++)if(p[r][c]&&(y+r>=ROWS||x+c<0||x+c>=COLS||b[y+r][x+c]))return true;return false}
+function merge(){for(let r=0;r<cur.p.length;r++)for(let c=0;c<cur.p[r].length;c++)if(cur.p[r][c])board[cur.y+r][cur.x+c]=cur.type;let cleared=0;for(let r=ROWS-1;r>=0;r--){if(board[r].every(v=>v)){board.splice(r,1);board.unshift(Array(COLS).fill(0));cleared++;r++}}sc+=cleared*100;document.getElementById('sc').textContent=sc;spawn()}
+function spawn(){cur={p:PIECES[Math.floor(Math.random()*PIECES.length)],x:3,y:0,type:Math.floor(Math.random()*7)+1};if(collide(board,cur.p,cur.x,cur.y))go=true}
+function rotate(){const r=cur.p[0].map((_,i)=>cur.p.map(row=>row[i]).reverse());if(!collide(board,r,cur.x,cur.y))cur.p=r}
+document.addEventListener('keydown',e=>{if(go&&e.key===' '){board=Array(ROWS).fill().map(()=>Array(COLS).fill(0));sc=0;go=false;spawn();return}if(e.key==='ArrowLeft'&&!collide(board,cur.p,cur.x-1,cur.y))cur.x--;if(e.key==='ArrowRight'&&!collide(board,cur.p,cur.x+1,cur.y))cur.x++;if(e.key==='ArrowUp')rotate();if(e.key==='ArrowDown'&&!collide(board,cur.p,cur.x,cur.y+1))cur.y++;if(e.key===' ')while(!collide(board,cur.p,cur.x,cur.y+1))cur.y++;e.preventDefault()});
+spawn();
+function draw(){ctx.fillStyle='#111';ctx.fillRect(0,0,300,600);
+for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){if(board[r][c]){ctx.fillStyle=COLORS[board[r][c]];ctx.shadowBlur=8;ctx.shadowColor=COLORS[board[r][c]];ctx.fillRect(c*SZ,r*SZ,SZ-1,SZ-1);ctx.shadowBlur=0}}
+for(let r=0;r<cur.p.length;r++)for(let c=0;c<cur.p[r].length;c++){if(cur.p[r][c]){ctx.fillStyle=COLORS[cur.type];ctx.shadowBlur=10;ctx.shadowColor=COLORS[cur.type];ctx.fillRect((cur.x+c)*SZ,(cur.y+r)*SZ,SZ-1,SZ-1);ctx.shadowBlur=0}}
+ctx.strokeStyle='#333';ctx.lineWidth=1;for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*SZ,0);ctx.lineTo(i*SZ,600);ctx.stroke()}for(let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*SZ);ctx.lineTo(300,i*SZ);ctx.stroke()}
+if(go){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,300,600);ctx.fillStyle='${c.accent}';ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.fillText('GAME OVER',150,280);ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.fillText('Score: '+sc,150,320);ctx.fillText('SPACE to restart',150,350)}
 requestAnimationFrame(draw)}
-spawn();setInterval(update,16);draw();</script></body></html>`
+setInterval(()=>{if(!go&&!collide(board,cur.p,cur.x,cur.y+1))cur.y++;else if(!go)merge()},400);
+draw();</script></body></html>`
   };
-}
-
-export async function generateGame(request: GameRequest): Promise<GameResult> {
-  const dim = request.dimension || "2d";
-  const analysis = analyzePrompt(request.prompt);
-
-  const prompt = `Create a complete, playable ${dim.toUpperCase()} game based on this description: "${request.prompt}"
-
-The game MUST be built with these technologies:
-- HTML5: Document structure, semantic elements, Canvas element or WebGL canvas
-- CSS3: All styling, animations, gradients, shadows, transitions, visual effects
-- JavaScript: All game logic, physics engine, input handling, collision detection, scoring, state management
-${dim === "3d" ? "- WebGL: GPU-accelerated 3D rendering with vertex/fragment shaders, perspective projection, 3D transforms, lighting" : "- Canvas 2D: 2D rendering with sprites, particles, gradients, shadows, image drawing"}
-
-Requirements:
-- Single standalone HTML file
-- The game MUST match the prompt's theme, characters, setting, and mechanics
-- Use colors derived from the prompt (e.g., "neon" → bright colors, "forest" → greens)
-- The title should reflect the prompt
-- Game mechanics must match what was described
-- Include score tracking, game over, restart
-- Polish: glow effects, particles, smooth animations
-
-Return ONLY valid JSON: {"html":"full HTML","title":"game title","description":"short description","instructions":"how to play","techStack":["HTML5","CSS3","JavaScript","${dim === "3d" ? "WebGL" : "Canvas 2D"}"]}`;
-
-  const shouldTryAI = isApiKeySet() || await checkOllama();
-  if (shouldTryAI) {
-    try {
-      const systemPrompt = `You are an expert game developer. Generate complete, playable HTML5 games.
-Tech requirements: HTML5 structure, CSS3 styling/animations, JavaScript game logic, and ${dim === "3d" ? "WebGL for GPU-accelerated 3D graphics with shaders" : "Canvas 2D for rendering with effects"}.
-Analyze the user's prompt carefully: extract the theme, characters, setting, colors, and game mechanics.
-The generated game MUST reflect ALL elements from the prompt — not just a generic template.
-Return only valid JSON.`;
-      const result = await chatCompletion(getModel(), systemPrompt, prompt, { temperature: 0.8, maxTokens: 8192 });
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        parsed.techStack = parsed.techStack || ["HTML5", "CSS3", "JavaScript", dim === "3d" ? "WebGL" : "Canvas 2D"];
-        return parsed;
-      }
-    } catch {}
-  }
-
-  return generateGameLocal(request);
 }

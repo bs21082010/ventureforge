@@ -1,7 +1,7 @@
-import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { aiChat, isAnyAI } from "@/lib/ai/ai-client";
 import type { CreativityRequest, CreativityResult, CreativeIdea } from "@/types/ai";
 
-const TYPE_PROMPTS: Record<string, { system: string; user: string }> = {
+const TYPE_PROMPTS: Record<string, { system: string; user: string | ((ctx: string, aud: string, tone: string) => string) }> = {
   MARKETING: {
     system: `You are a growth hacker and digital marketing strategist. Generate aggressive, data-driven marketing campaigns. Focus on customer acquisition, viral loops, paid ads strategy, SEO, content marketing funnels, and conversion optimization. Return ONLY valid JSON:
 {"ideas":[{"title":"string","description":"detailed marketing strategy with specific tactics and channels","channels":["specific channel1","specific channel2"],"estimatedImpact":"LOW"|"MEDIUM"|"HIGH","estimatedCost":"LOW"|"MEDIUM"|"HIGH","implementationSteps":["step1","step2","step3","step4"]}],"taglines":["marketing tagline1","tagline2","tagline3","tagline4"],"visualSuggestions":["visual direction 1","visual 2","visual 3"],"nameSuggestions":["campaign name 1","name 2","name 3","name 4","name 5","name 6"]}`,
@@ -32,11 +32,10 @@ const TYPE_PROMPTS: Record<string, { system: string; user: string }> = {
 export async function generateMarketingIdeas(
   request: CreativityRequest
 ): Promise<CreativityResult> {
-  const hasAI = isApiKeySet() || await checkOllama();
+  const hasAI = await isAnyAI();
 
   if (hasAI) {
     try {
-      const model = getModel();
       const typeConfig = TYPE_PROMPTS[request.type] || TYPE_PROMPTS.MARKETING;
 
       const systemPrompt = typeConfig.system;
@@ -45,14 +44,12 @@ export async function generateMarketingIdeas(
       if (request.followUp) {
         userPrompt = `Business: ${request.context}\nType: ${request.type.replace(/_/g, " ")}\nTarget: ${request.targetAudience || "general audience"}\n\nThe user asks: ${request.followUp}\n\nGive 3-4 SHORT, SPECIFIC ideas answering this exact question. Each idea: 2-3 sentences max. Return JSON only.`;
       } else {
-        userPrompt = typeConfig.user(
-          request.context,
-          request.targetAudience || "",
-          request.tone || "professional"
-        );
+        userPrompt = typeof typeConfig.user === "function"
+          ? typeConfig.user(request.context, request.targetAudience || "", request.tone || "professional")
+          : typeConfig.user;
       }
 
-      const result = await chatCompletion(model, systemPrompt, userPrompt, {
+      const result = await aiChat(systemPrompt, userPrompt, {
         temperature: 0.85,
         maxTokens: 4096,
       });
@@ -174,7 +171,7 @@ function generateContextAwareInitial(request: CreativityRequest): CreativityResu
     ideaBank.push(
       { title: "Wellness Challenge Campaign", description: `Launch a 30-day wellness challenge with daily prompts, progress tracking, and community support. Participants share their journey on social media.`, channels: ["Mobile App", "Instagram", "Email", "Community"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Design 30-day curriculum", "Build tracking feature", "Create community group", "Partner with wellness influencers", "Offer prizes for completion"] },
       { title: "Health Education Content Series", description: `Create weekly educational content debunking health myths and providing evidence-based advice. Position ${ctx} as the trusted authority.`, channels: ["Blog", "YouTube", "Podcast", "Social Media"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Research top 50 health myths", "Create content calendar", "Produce weekly videos", "Launch podcast series", "Build email list"] },
-      { title: "Corporate Wellness Partnerships", description: `Partner with companies to offer ${ctx} as part of their employee wellness program. Provide group rates and dedicated account management.`, channels: ["LinkedIn", "HR Networks", "Direct Sales", "Events"], estimatedImpact: "HIGH", cost: "MEDIUM", estimatedCost: "MEDIUM", implementationSteps: ["Create corporate packages", "Build HR relationships", "Present at wellness conferences", "Offer pilot programs", "Track employee outcomes"] },
+      { title: "Corporate Wellness Partnerships", description: `Partner with companies to offer ${ctx} as part of their employee wellness program. Provide group rates and dedicated account management.`, channels: ["LinkedIn", "HR Networks", "Direct Sales", "Events"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Create corporate packages", "Build HR relationships", "Present at wellness conferences", "Offer pilot programs", "Track employee outcomes"] },
       { title: "Patient Success Story Campaign", description: `Feature real patient success stories (with consent) across all channels. Authentic testimonials build trust and emotional connection.`, channels: ["Website", "Social Media", "Email", "In-Store"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Collect patient stories", "Create video testimonials", "Design social media templates", "Build case study library", "Share across all touchpoints"] },
       { title: "Community Health Workshops", description: `Host free monthly health workshops in your community. Topics include nutrition, stress management, sleep optimization, and preventive care.`, channels: ["Events", "Local Media", "Community Centers", "Social"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Partner with community centers", "Design 12 workshop topics", "Create educational materials", "Promote through local channels", "Collect attendee feedback"] },
       { title: "Wearable Integration Partnership", description: `Integrate with Apple Health, Fitbit, and Garmin to pull user data and provide personalized health insights. Create a data-driven wellness experience.`, channels: ["App", "Wearables", "Email", "Dashboard"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Integrate with 3 wearable APIs", "Build data dashboard", "Create personalized insights", "Launch with early adopters", "Iterate based on user feedback"] },
@@ -202,7 +199,7 @@ function generateContextAwareInitial(request: CreativityRequest): CreativityResu
     ideaBank.push(
       { title: "Social Commerce Launch", description: `Launch shoppable posts on Instagram, TikTok, and Pinterest. Create a seamless path from discovery to purchase in 2 taps.`, channels: ["Instagram Shopping", "TikTok Shop", "Pinterest", "Website"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Set up Instagram Shop", "Create TikTok product videos", "Design shoppable pins", "Run social ads", "Track conversion rates"] },
       { title: "VIP Early Access Program", description: `Give loyal customers early access to new collections 48 hours before public launch. Creates exclusivity and drives repeat purchases.`, channels: ["Email", "App", "SMS", "VIP Portal"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Segment top 20% customers", "Create early access portal", "Send 48-hour advance emails", "Track early vs public launch sales", "Gather VIP feedback"] },
-      { title: "Unboxing Experience Optimization", description: `Redesign packaging to be Instagram-worthy. Include handwritten notes, samples, and surprise gifts that customers want to share.`, channels: ["Packaging", "Social Media", "Email", "UGC"], estimatedImpact: "MEDIUM", cost: "MEDIUM", estimatedCost: "MEDIUM", implementationSteps: ["Design premium packaging", "Add personalized touches", "Include surprise samples", "Encourage social sharing", "Track UGC volume"] },
+      { title: "Unboxing Experience Optimization", description: `Redesign packaging to be Instagram-worthy. Include handwritten notes, samples, and surprise gifts that customers want to share.`, channels: ["Packaging", "Social Media", "Email", "UGC"], estimatedImpact: "MEDIUM", estimatedCost: "MEDIUM", implementationSteps: ["Design premium packaging", "Add personalized touches", "Include surprise samples", "Encourage social sharing", "Track UGC volume"] },
       { title: "Flash Sale Countdown Campaign", description: `Run weekly flash sales with countdown timers. Create urgency through limited quantities and time-bound offers.`, channels: ["Website", "Email", "SMS", "Social Media"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Design countdown timers", "Create urgency copy", "Segment email lists", "Run social ads", "Measure conversion lift"] },
       { title: "Style Quiz Personalization", description: `Create an interactive style quiz that recommends products based on preferences. Capture email while providing personalized suggestions.`, channels: ["Website", "Email", "Social", "Retargeting"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Design style quiz", "Build recommendation engine", "Create email sequences", "Set up retargeting", "A/B test quiz flows"] },
       { title: "Local Store Pop-Up Events", description: `Host monthly pop-up events in-store with exclusive products, meet-and-greets, and community experiences.`, channels: ["In-Store", "Social Media", "Local Media", "Events"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Plan 12 monthly themes", "Create event promotions", "Partner with local influencers", "Document each event", "Build community list"] },
@@ -305,7 +302,7 @@ function generateDynamicFollowUp(request: CreativityRequest): CreativityResult {
     );
   } else if (isCompetitor) {
     ideas.push(
-      { title: "Competitor Weakness Exploitation", description: `Analyze top 3 competitors. Find their worst reviews, slowest features, and biggest complaints. Build marketing that highlights how you solve those exact problems.`, channels: ["Review Sites", "Social Media", "Landing Pages", "Ads"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Read 100 competitor reviews", "Identify top 5 pain points", "Create comparison landing pages", "Run "vs competitor" ads", "Track conquest conversions"] },
+      { title: "Competitor Weakness Exploitation", description: `Analyze top 3 competitors. Find their worst reviews, slowest features, and biggest complaints. Build marketing that highlights how you solve those exact problems.`, channels: ["Review Sites", "Social Media", "Landing Pages", "Ads"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Read 100 competitor reviews", "Identify top 5 pain points", "Create comparison landing pages", "Run vs competitor ads", "Track conquest conversions"] },
     );
   } else if (isRetention) {
     ideas.push(

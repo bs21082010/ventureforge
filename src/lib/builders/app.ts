@@ -1,4 +1,4 @@
-import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { aiJsonCompletion, isAnyAI } from "@/lib/ai/ai-client";
 
 export interface AppRequest {
   prompt: string;
@@ -218,13 +218,11 @@ Return JSON:
   "buildSteps": ["array of build commands"]
 }`;
 
-  const shouldTryAI = isApiKeySet() || await checkOllama();
-  if (shouldTryAI) {
+  const available = await isAnyAI();
+  if (available) {
     try {
       const systemPrompt = "You are a mobile app developer. Generate complete app code. Return only valid JSON.";
-      const result = await chatCompletion(getModel(), systemPrompt, prompt, { temperature: 0.7, maxTokens: 4096 });
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      return await aiJsonCompletion<AppResult>(systemPrompt, prompt, { temperature: 0.7, maxTokens: 4096 });
     } catch {}
   }
 

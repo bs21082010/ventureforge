@@ -1,4 +1,4 @@
-import { chatCompletion, getModel, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { aiJsonCompletion, isAnyAI } from "@/lib/ai/ai-client";
 
 export interface ResearchRequest {
   topic: string;
@@ -133,13 +133,11 @@ Return JSON with this exact structure:
   "sources": ["array of source citations"]
 }`;
 
-  const shouldTryAI = isApiKeySet() || await checkOllama();
-  if (shouldTryAI) {
+  const available = await isAnyAI();
+  if (available) {
     try {
-      const systemPrompt = "You are a market research analyst. Provide data-driven analysis with realistic figures. Return only valid JSON.";
-      const result = await chatCompletion(getModel(), systemPrompt, prompt, { temperature: 0.7, maxTokens: 2048 });
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      const systemPrompt = "You are a research analyst. Provide detailed, well-structured research with data and insights. Return only valid JSON.";
+      return await aiJsonCompletion<ResearchResult>(systemPrompt, prompt, { temperature: 0.7, maxTokens: 2048 });
     } catch {}
   }
 

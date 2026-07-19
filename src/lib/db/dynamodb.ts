@@ -140,7 +140,7 @@ export async function listPlans(ownerId?: string): Promise<any[]> {
     ExpressionAttributeValues: { ":sk": "META" },
   }));
 
-  let plans = (result.Items || []).map((i) => ({
+  let plans = ((result.Items || []) as any[]).map((i: any) => ({
     id: i.pk,
     title: i.title,
     description: i.description,
@@ -148,6 +148,7 @@ export async function listPlans(ownerId?: string): Promise<any[]> {
     region: i.region,
     status: i.status,
     version: i.version,
+    ownerId: i.ownerId,
     createdAt: i.createdAt,
     updatedAt: i.updatedAt,
   }));

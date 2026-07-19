@@ -7,7 +7,7 @@ import type {
   Forecast,
 } from "@/types/ai";
 import { getIndustryGrowthRate, getCompetitorDensity } from "../geospatial/indicators";
-import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { aiChat, isAnyAI } from "@/lib/ai/ai-client";
 
 interface IndustryProfile {
   growthRate: number;
@@ -731,11 +731,10 @@ Generate 5-6 trends, 3-4 risks, 3-4 opportunities, and 3-4 forecasts. Be specifi
 export async function generateForesight(
   request: ForesightRequest
 ): Promise<ForesightResult> {
-  const hasAI = isApiKeySet() || await checkOllama();
+  const hasAI = await isAnyAI();
 
   if (hasAI) {
     try {
-      const model = getModel();
       const userPrompt = `Industry: ${request.industry}
 Region: ${request.region}
 Forecast Timeframe: ${request.timeframe} years
@@ -743,7 +742,7 @@ ${request.focusAreas?.length ? `Focus Areas: ${request.focusAreas.join(", ")}` :
 
 Provide comprehensive foresight analysis for this industry in this region. Include real trends, risks, opportunities, and data-driven forecasts.`;
 
-      const result = await chatCompletion(model, FORESIGHT_SYSTEM_PROMPT, userPrompt, {
+      const result = await aiChat(FORESIGHT_SYSTEM_PROMPT, userPrompt, {
         temperature: 0.7,
         maxTokens: 4096,
       });

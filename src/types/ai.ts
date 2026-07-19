@@ -76,7 +76,8 @@ export interface ForesightRequest {
   industry: string;
   region: string;
   timeframe: number; // years
-  factors: string[];
+  factors?: string[];
+  focusAreas?: string[];
 }
 
 export interface ForesightResult {
@@ -115,10 +116,10 @@ export interface Opportunity {
 
 export interface Forecast {
   metric: string;
-  current: number;
+  current: number | string;
   predicted: number;
   confidence: number;
-  factors: string[];
+  factors?: string[];
 }
 
 export interface WorkflowStep {

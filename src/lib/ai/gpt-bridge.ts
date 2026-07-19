@@ -1,4 +1,4 @@
-import { chatCompletion, jsonCompletion, isApiKeySet, getModel, checkOllama } from "./openai-client";
+import { aiChat, aiJsonCompletion, isAnyAI } from "./ai-client";
 import { generateMarketingIdeas } from "./creativity-sandbox";
 import { generateForesight } from "./foresight";
 import { generateExplainability, rankSuggestions } from "./explainable";
@@ -11,14 +11,11 @@ import type {
   AISuggestion,
 } from "@/types/ai";
 
-async function tryOllamaFallback<T>(
+async function tryAIFallback<T>(
   fn: () => Promise<T>,
   fallback: () => Promise<T>
 ): Promise<T> {
-  if (!isApiKeySet()) {
-    const available = await checkOllama();
-    if (!available) return fallback();
-  }
+  if (!(await isAnyAI())) return fallback();
   try {
     return await fn();
   } catch {
@@ -31,7 +28,7 @@ export async function generateBusinessIdeas(
   region: string,
   count: number
 ): Promise<CreativityResult> {
-  return tryOllamaFallback(
+  return tryAIFallback(
     async () => {
       const systemPrompt = `You are a senior business strategist and creative director specializing in ${industry} businesses in the ${region} market. 
 You have deep expertise in marketing, branding, and customer engagement strategies across global markets.
@@ -49,7 +46,7 @@ For each idea provide:
 
 Return as JSON: { "ideas": [...], "taglines": [...], "visualSuggestions": [...], "nameSuggestions": [...] }`;
 
-      return jsonCompletion<CreativityResult>(getModel(), systemPrompt, userPrompt, {
+      return aiJsonCompletion<CreativityResult>(systemPrompt, userPrompt, {
         temperature: 0.8,
       });
     },
@@ -67,7 +64,7 @@ export async function generatePredictions(
   assumptions: string[],
   horizon: number
 ): Promise<ForesightResult> {
-  return tryOllamaFallback(
+  return tryAIFallback(
     async () => {
       const systemPrompt = `You are a senior market analyst and futurist specializing in trend analysis, risk assessment, and forecasting.
 You provide data-driven predictions with realistic confidence intervals and probabilities.
@@ -85,7 +82,7 @@ Return JSON with this exact structure:
   "confidence": 0-1
 }`;
 
-      return jsonCompletion<ForesightResult>(getModel(), systemPrompt, userPrompt, {
+      return aiJsonCompletion<ForesightResult>(systemPrompt, userPrompt, {
         temperature: 0.6,
       });
     },
@@ -103,7 +100,7 @@ export async function explainDecision(
   decisionType: string,
   inputs: Record<string, unknown>
 ): Promise<ExplainabilityResult> {
-  return tryOllamaFallback(
+  return tryAIFallback(
     async () => {
       const systemPrompt = `You are an expert explainable AI system that provides transparent, well-reasoned explanations for business decisions.
 You break down confidence into measurable factors and provide clear reasoning chains.
@@ -124,7 +121,7 @@ Return JSON:
   "riskAssessment": "..."
 }`;
 
-      return jsonCompletion<ExplainabilityResult>(getModel(), systemPrompt, userPrompt, {
+      return aiJsonCompletion<ExplainabilityResult>(systemPrompt, userPrompt, {
         temperature: 0.4,
       });
     },

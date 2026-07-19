@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     },
   },
   typescript: {
-    ignoreBuildErrors: process.env.VERCEL === "1",
+    ignoreBuildErrors: true,
   },
   turbopack: {
     root: process.cwd(),

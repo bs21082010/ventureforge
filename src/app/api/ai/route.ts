@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
         industry: body.industry || "Technology",
         region: body.region || "global",
         timeframe: body.timeframe || 5,
-        focusAreas: body.focusAreas || [],
+        factors: body.factors || body.focusAreas || [],
       });
       return NextResponse.json(result);
     }
