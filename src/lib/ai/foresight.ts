@@ -7,6 +7,7 @@ import type {
   Forecast,
 } from "@/types/ai";
 import { getIndustryGrowthRate, getCompetitorDensity } from "../geospatial/indicators";
+import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
 
 const MACRO_TRENDS: Trend[] = [
   {
@@ -202,23 +203,82 @@ function generateForecasts(
   ];
 }
 
+const FORESIGHT_SYSTEM_PROMPT = `You are a business foresight analyst specializing in trend analysis, risk assessment, and opportunity identification. Analyze the given industry and region to provide predictive insights. Return ONLY valid JSON:
+{
+  "trends": [{"name": "string", "direction": "UP"|"DOWN"|"STABLE"|"VOLATILE", "impact": 1-10, "probability": 0-1, "timeframe": "string", "description": "detailed analysis", "sources": [{"title": "string", "source": "string"}]}],
+  "risks": [{"name": "string", "severity": "LOW"|"MEDIUM"|"HIGH"|"CRITICAL", "impact": "detailed impact description", "mitigation": ["strategy1", "strategy2"]}],
+  "opportunities": [{"name": "string", "potential": "LOW"|"MEDIUM"|"HIGH", "timeframe": "string", "expectedReturn": "string", "requirements": ["req1", "req2"]}],
+  "forecasts": [{"metric": "string", "current": "string", "predicted": number, "confidence": 0-1}]
+}
+Generate 5-6 trends, 3-4 risks, 3-4 opportunities, and 3-4 forecasts. Be specific to the industry and region.`;
+
 export async function generateForesight(
   request: ForesightRequest
 ): Promise<ForesightResult> {
+  const hasAI = isApiKeySet() || await checkOllama();
+
+  if (hasAI) {
+    try {
+      const model = getModel();
+      const userPrompt = `Industry: ${request.industry}
+Region: ${request.region}
+Forecast Timeframe: ${request.timeframe} years
+${request.focusAreas?.length ? `Focus Areas: ${request.focusAreas.join(", ")}` : ""}
+
+Provide comprehensive foresight analysis for this industry in this region. Include real trends, risks, opportunities, and data-driven forecasts.`;
+
+      const result = await chatCompletion(model, FORESIGHT_SYSTEM_PROMPT, userPrompt, {
+        temperature: 0.7,
+        maxTokens: 4096,
+      });
+
+      const jsonMatch = result.match(/```json\s*([\s\S]*?)```/) || result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0].replace(/```json\s*/g, "").replace(/```/g, "").trim());
+        if (parsed.trends && parsed.risks && parsed.opportunities) {
+          return {
+            trends: (parsed.trends || []).map((t: any) => ({
+              name: t.name || "Unknown Trend",
+              direction: t.direction || "STABLE",
+              impact: t.impact || 5,
+              probability: t.probability || 0.5,
+              timeframe: t.timeframe || "2024-2030",
+              description: t.description || "",
+              sources: t.sources || [],
+            })),
+            risks: (parsed.risks || []).map((r: any) => ({
+              name: r.name || "Unknown Risk",
+              severity: r.severity || "MEDIUM",
+              impact: r.impact || "",
+              mitigation: r.mitigation || [],
+            })),
+            opportunities: (parsed.opportunities || []).map((o: any) => ({
+              name: o.name || "Unknown Opportunity",
+              potential: o.potential || "MEDIUM",
+              timeframe: o.timeframe || "1-3 years",
+              expectedReturn: o.expectedReturn || "TBD",
+              requirements: o.requirements || [],
+            })),
+            forecasts: (parsed.forecasts || []).map((f: any) => ({
+              metric: f.metric || "Unknown",
+              current: f.current || "N/A",
+              predicted: f.predicted || 0,
+              confidence: f.confidence || 0.5,
+            })),
+            confidence: parsed.confidence || 0.7,
+          };
+        }
+      }
+    } catch (err) {
+      console.error("AI foresight generation failed, using fallback:", err);
+    }
+  }
+
+  // Fallback to static analysis
   const trends = [...MACRO_TRENDS, ...generateIndustryTrends(request.industry)];
   const risks = assessRegionalRisks(request.region, request.industry);
   const opportunities = identifyOpportunities(request.industry, request.region);
-  const forecasts = generateForecasts(
-    request.industry,
-    request.region,
-    request.timeframe
-  );
+  const forecasts = generateForecasts(request.industry, request.region, request.timeframe);
 
-  return {
-    trends,
-    risks,
-    opportunities,
-    forecasts,
-    confidence: 0.72,
-  };
+  return { trends, risks, opportunities, forecasts, confidence: 0.65 };
 }
