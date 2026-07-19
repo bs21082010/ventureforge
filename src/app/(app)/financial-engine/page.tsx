@@ -191,19 +191,19 @@ export default function FinancialEnginePage() {
 
       {/* Summary Cards */}
       {summary && (
-        <motion.div variants={item} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <motion.div variants={item} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {[
-            { label: "Total Revenue", value: formatCurrency(summary.totalRevenue), color: "text-green-400" },
-            { label: "Total Expenses", value: formatCurrency(summary.totalExpenses), color: "text-red-400" },
-            { label: "Net Profit", value: formatCurrency(summary.netProfit), color: summary.netProfit >= 0 ? "text-green-400" : "text-red-400" },
-            { label: "Profit Margin", value: `${summary.profitMargin.toFixed(1)}%`, color: "text-blue-400" },
-            { label: "ROI", value: `${summary.roi.toFixed(1)}%`, color: "text-purple-400" },
-            { label: "Break Even", value: summary.breakEvenPeriod, color: "text-yellow-400" },
+            { label: "Total Revenue", value: formatCurrency(summary.totalRevenue), color: "text-green-400", bg: "from-green-900/30 to-green-950/20" },
+            { label: "Total Expenses", value: formatCurrency(summary.totalExpenses), color: "text-red-400", bg: "from-red-900/30 to-red-950/20" },
+            { label: "Net Profit", value: formatCurrency(summary.netProfit), color: summary.netProfit >= 0 ? "text-green-400" : "text-red-400", bg: summary.netProfit >= 0 ? "from-green-900/30 to-green-950/20" : "from-red-900/30 to-red-950/20" },
+            { label: "Profit Margin", value: `${summary.profitMargin.toFixed(1)}%`, color: "text-blue-400", bg: "from-blue-900/30 to-blue-950/20" },
+            { label: "ROI", value: `${summary.roi.toFixed(1)}%`, color: "text-purple-400", bg: "from-purple-900/30 to-purple-950/20" },
+            { label: "Break Even", value: summary.breakEvenPeriod, color: "text-yellow-400", bg: "from-yellow-900/30 to-yellow-950/20" },
           ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="p-5 space-y-1">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">{stat.label}</p>
-                <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+            <Card key={stat.label} className={`bg-gradient-to-br ${stat.bg} border border-white/5`}>
+              <CardContent className="p-6 space-y-2">
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{stat.label}</p>
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
               </CardContent>
             </Card>
           ))}

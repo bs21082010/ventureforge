@@ -264,10 +264,25 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="lg:col-span-3">
               {result?.summary && (
-                <div className="mb-4 grid grid-cols-3 gap-3">
-                  <Card><p className="text-xs text-gray-400">Total Revenue</p><p className="text-lg font-bold text-green-400">{formatCurrency(result.summary.totalRevenue)}</p></Card>
-                  <Card><p className="text-xs text-gray-400">Net Profit</p><p className={`text-lg font-bold ${result.summary.netProfit >= 0 ? "text-green-400" : "text-red-400"}`}>{formatCurrency(result.summary.netProfit)}</p></Card>
-                  <Card><p className="text-xs text-gray-400">Break Even</p><p className="text-lg font-bold text-blue-400">{result.summary.breakEvenPeriod}</p></Card>
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <Card className="bg-gradient-to-br from-green-900/30 to-green-950/20 border border-green-800/20">
+                    <CardContent className="p-5">
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Revenue</p>
+                      <p className="text-2xl font-bold text-green-400 mt-1">{formatCurrency(result.summary.totalRevenue)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className={`bg-gradient-to-br ${result.summary.netProfit >= 0 ? "from-green-900/30 to-green-950/20" : "from-red-900/30 to-red-950/20"} border ${result.summary.netProfit >= 0 ? "border-green-800/20" : "border-red-800/20"}`}>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Net Profit</p>
+                      <p className={`text-2xl font-bold mt-1 ${result.summary.netProfit >= 0 ? "text-green-400" : "text-red-400"}`}>{formatCurrency(result.summary.netProfit)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-blue-900/30 to-blue-950/20 border border-blue-800/20">
+                    <CardContent className="p-5">
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Break Even</p>
+                      <p className="text-2xl font-bold text-blue-400 mt-1">{result.summary.breakEvenPeriod}</p>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
               <Card variant="bordered">
