@@ -202,7 +202,7 @@ export function CreativityWorkspace() {
                   </div>
                   {msg.content && <p className="text-sm text-gray-300 mb-2">{msg.content}</p>}
 
-                  {msg.ideas && msg.ideas.length > 0 && (
+                  {msg.type === "MARKETING" && msg.ideas && msg.ideas.length > 0 && (
                     <div className="space-y-2 mt-2">
                       {msg.ideas.map((idea, j) => (
                         <div key={j} className="rounded bg-white/5 border border-white/10 p-3">
@@ -234,7 +234,15 @@ export function CreativityWorkspace() {
                     </div>
                   )}
 
-                  {msg.taglines && msg.taglines.length > 0 && (
+                  {msg.type === "BRANDING" && msg.visualSuggestions && msg.visualSuggestions.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      {msg.visualSuggestions.map((v, j) => (
+                        <div key={j} className="rounded bg-blue-900/20 border border-blue-800/20 px-3 py-2 text-xs text-blue-300">{v}</div>
+                      ))}
+                    </div>
+                  )}
+
+                  {msg.type === "BRANDING" && msg.taglines && msg.taglines.length > 0 && (
                     <div className="space-y-1 mt-2">
                       {msg.taglines.map((t, j) => (
                         <div key={j} className="rounded bg-purple-900/20 border border-purple-800/30 px-3 py-2 text-xs text-purple-300">
@@ -244,7 +252,7 @@ export function CreativityWorkspace() {
                     </div>
                   )}
 
-                  {msg.nameSuggestions && msg.nameSuggestions.length > 0 && (
+                  {msg.type === "NAMING" && msg.nameSuggestions && msg.nameSuggestions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {msg.nameSuggestions.map((n, j) => (
                         <Badge key={j} variant="purple">{n}</Badge>
@@ -252,10 +260,44 @@ export function CreativityWorkspace() {
                     </div>
                   )}
 
-                  {msg.visualSuggestions && msg.visualSuggestions.length > 0 && (
+                  {msg.type === "NAMING" && msg.taglines && msg.taglines.length > 0 && (
                     <div className="space-y-1 mt-2">
-                      {msg.visualSuggestions.map((v, j) => (
-                        <div key={j} className="rounded bg-blue-900/20 border border-blue-800/20 px-3 py-2 text-xs text-blue-300">{v}</div>
+                      {msg.taglines.map((t, j) => (
+                        <div key={j} className="rounded bg-purple-900/20 border border-purple-800/30 px-3 py-2 text-xs text-purple-300">
+                          &ldquo;{t}&rdquo;
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(msg.type === "CUSTOMER_ENGAGEMENT" || msg.type === "CONTENT") && msg.ideas && msg.ideas.length > 0 && (
+                    <div className="space-y-2 mt-2">
+                      {msg.ideas.map((idea, j) => (
+                        <div key={j} className="rounded bg-white/5 border border-white/10 p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <h5 className="text-sm font-medium text-gray-200">{idea.title}</h5>
+                            <div className="flex gap-1">
+                              <Badge variant={idea.estimatedImpact === "HIGH" ? "success" : idea.estimatedImpact === "MEDIUM" ? "warning" : "default"} size="sm">{idea.estimatedImpact}</Badge>
+                              <Badge variant={idea.estimatedCost === "HIGH" ? "danger" : idea.estimatedCost === "MEDIUM" ? "warning" : "success"} size="sm">{idea.estimatedCost}</Badge>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-400 mb-1">{idea.description}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {idea.channels.map((ch, k) => (
+                              <Badge key={k} variant="default" size="sm">{ch}</Badge>
+                            ))}
+                          </div>
+                          {idea.implementationSteps.length > 0 && (
+                            <div className="mt-2 border-t border-white/10 pt-2">
+                              <p className="text-[10px] font-medium text-gray-500 mb-1">Steps</p>
+                              <ol className="space-y-0.5">
+                                {idea.implementationSteps.map((step, k) => (
+                                  <li key={k} className="text-[11px] text-gray-400">{k + 1}. {step}</li>
+                                ))}
+                              </ol>
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
