@@ -421,7 +421,7 @@ function drawCarShape(x,y,w,h,color,isPlayer){
   var r=parseInt(color.substr(1,2),16),g=parseInt(color.substr(3,2),16),b=parseInt(color.substr(5,2),16);
   ctx.fillStyle='rgb('+Math.floor(r*0.5)+','+Math.floor(g*0.5)+','+Math.floor(b*0.5)+')';
   ctx.fillRect(x+3,y+Math.floor(h*0.3),w-6,Math.floor(h*0.25));
-  ctx.fillStyle=isP?'#0a3060':'#0a0a0a';
+  ctx.fillStyle=isPlayer?'#0a3060':'#0a0a0a';
   ctx.fillRect(x+Math.floor(w*0.15),y+Math.floor(h*0.06),Math.floor(w*0.7),Math.floor(h*0.22));
   ctx.fillStyle='#5ac8fa';
   ctx.fillRect(x+Math.floor(w*0.18),y+Math.floor(h*0.08),Math.floor(w*0.64),Math.floor(h*0.16));
