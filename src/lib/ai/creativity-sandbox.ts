@@ -84,8 +84,12 @@ export async function generateMarketingIdeas(
 
   // Fallback to templates
   const industryKey = request.context.toUpperCase().replace(/\s+/g, "_");
-  const ideas = MARKETING_TEMPLATES[industryKey] || generateGenericIdeas(request);
-  const taglines = TAGLINE_TEMPLATES[industryKey] || generateGenericTaglines(request);
+  const ideas = request.followUp
+    ? generateFollowUpIdeas(request)
+    : MARKETING_TEMPLATES[industryKey] || generateGenericIdeas(request);
+  const taglines = request.followUp
+    ? []
+    : TAGLINE_TEMPLATES[industryKey] || generateGenericTaglines(request);
 
   return {
     ideas,
@@ -93,6 +97,47 @@ export async function generateMarketingIdeas(
     visualSuggestions: generateVisualSuggestions(request),
     nameSuggestions: generateNameSuggestions(request),
   };
+}
+
+function generateFollowUpIdeas(request: CreativityRequest): CreativeIdea[] {
+  const q = (request.followUp || "").toLowerCase();
+  const ctx = request.context;
+  const type = request.type;
+
+  if (q.includes("instagram") || q.includes("social")) {
+    return [
+      { title: "Instagram Reels Series", description: `Create weekly Reels showing behind-the-scenes of ${ctx}. Use trending audio, quick tips, and customer stories.`, channels: ["Instagram Reels", "Stories"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Film 3 short clips per week", "Use trending sounds", "Post 5x per week", "Engage with comments within 1 hour"] },
+      { title: "User-Generated Content Campaign", description: `Launch a hashtag challenge where customers share their ${ctx} experience. Feature the best posts weekly.`, channels: ["Instagram Feed", "Stories", "Hashtag"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Create branded hashtag", "Announce weekly contest", "Repost top content", "Reward winners with discounts"] },
+      { title: "Instagram Ads Funnel", description: `Run retargeting ads: awareness → engagement → conversion. Use carousel ads showing product benefits.`, channels: ["Instagram Ads", "Meta Ads Manager"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Set up Meta Pixel", "Create 3 ad sets for each funnel stage", "A/B test creatives", "Optimize weekly based on ROAS"] },
+    ];
+  }
+
+  if (q.includes("partner") || q.includes("collaboration")) {
+    return [
+      { title: "Strategic Brand Partnership", description: `Partner with complementary brands in ${ctx} space. Co-create limited edition products or bundles.`, channels: ["Cross-promotion", "Email", "Social"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Identify 5 complementary brands", "Propose mutual value exchange", "Co-create content", "Cross-promote to each audience"] },
+      { title: "Influencer Micro-Tier Program", description: `Recruit 20-30 micro-influencers (10K-50K followers) as brand ambassadors for ${ctx}.`, channels: ["Instagram", "YouTube", "TikTok"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Research micro-influencers in niche", "Send free product samples", "Create ambassador agreement", "Track affiliate conversions"] },
+    ];
+  }
+
+  if (q.includes("email") || q.includes("newsletter")) {
+    return [
+      { title: "Welcome Email Sequence", description: `5-part automated email series for new subscribers. Value-driven content that builds trust before selling.`, channels: ["Email", "Automation"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Write 5 email templates", "Set up automation trigger", "Add personalization tokens", "A/B test subject lines"] },
+      { title: "Weekly Digest Newsletter", description: `Curated weekly email with industry insights, tips, and product updates for ${ctx} audience.`, channels: ["Email", "Substack"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Set up newsletter template", "Curate 3-5 weekly stories", "Add one CTA per email", "Send consistently every Tuesday"] },
+    ];
+  }
+
+  if (q.includes("pric") || q.includes("revenue") || q.includes("monetiz")) {
+    return [
+      { title: "Tiered Pricing Model", description: `Introduce 3 pricing tiers: Basic, Pro, Enterprise. Each tier adds specific value for ${ctx}.`, channels: ["Website", "Sales"], estimatedImpact: "HIGH", estimatedCost: "LOW", implementationSteps: ["Analyze competitor pricing", "Define feature tiers", "Create pricing page", "A/B test price points"] },
+      { title: "Freemium Upsell Strategy", description: `Offer a free tier with limited features. Use in-app prompts and email nudges to convert to paid.`, channels: ["App", "Email", "In-App"], estimatedImpact: "HIGH", estimatedCost: "MEDIUM", implementationSteps: ["Define free vs paid features", "Add upgrade prompts", "Create onboarding flow", "Track conversion metrics"] },
+    ];
+  }
+
+  // Generic follow-up response
+  return [
+    { title: `Targeted ${type.replace(/_/g, " ")} Strategy`, description: `Based on your follow-up about "${request.followUp}", here is a focused approach: research your specific audience segment, create tailored messaging, test with a small group, then scale what works.`, channels: ["Research", "Testing", "Scaling"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Define target segment", "Create 3 messaging variants", "Run small-scale test", "Analyze results and scale winner"] },
+    { title: `Data-Driven Iteration`, description: `Use analytics to identify what resonates. For "${request.followUp}", start with 2-3 approaches, measure engagement double down on winners.`, channels: ["Analytics", "A/B Testing"], estimatedImpact: "MEDIUM", estimatedCost: "LOW", implementationSteps: ["Set up tracking", "Launch 2-3 variants", "Measure after 2 weeks", "Reallocate budget to top performer"] },
+  ];
 }
 
 const MARKETING_TEMPLATES: Record<string, CreativeIdea[]> = {
