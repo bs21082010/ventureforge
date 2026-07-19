@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const FEATURES = [
   { category: "AI Studios", items: ["Game Studio — create playable HTML5 games", "Website Builder — generate full websites", "App Builder — build React Native/Expo apps", "Research Hub — deep-dive market analysis", "Business Builder — plans + websites + apps"] },
-  { category: "Business Planning", items: ["Unlimited business plans", "AI-powered analysis & suggestions", "Advanced financial engine with scenarios", "Data source integrations (World Bank, IMF, FRED)", "Compliance automation (multi-jurisdiction)"] },
+  { category: "Business Planning", items: ["Unlimited business plans", "Forge-powered analysis & suggestions", "Advanced financial engine with scenarios", "Data source integrations (World Bank, IMF, FRED)", "Compliance automation (multi-jurisdiction)"] },
   { category: "Platform", items: ["Team collaboration", "Export to PDF", "Custom branding", "API access", "Dedicated community support", "All future features included"] },
 ];
 

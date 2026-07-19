@@ -169,7 +169,7 @@ export default function HomePage() {
             <p className="text-xs text-blue-400/60 uppercase tracking-[0.3em] mb-4 font-orbitron font-medium">Get Started</p>
             <h2 className="font-orbitron text-3xl font-black text-white mb-4">READY TO BUILD?</h2>
             <p className="text-gray-500 mb-10 max-w-md mx-auto text-sm font-orbitron tracking-wide">
-              Join entrepreneurs and institutions using AI-powered planning.
+               Join entrepreneurs and institutions using Forge-powered planning.
             </p>
             <Link
               href="/plans/new"

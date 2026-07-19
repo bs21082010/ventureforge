@@ -13,7 +13,7 @@ const FALLBACK_STATS = [
   { label: "Active Plans", value: "3", change: "+1 this week" },
   { label: "Revenue Projects", value: "$2.4M", change: "Avg across plans" },
   { label: "Compliance Score", value: "87%", change: "+5% from last check" },
-  { label: "AI Suggestions", value: "12", change: "8 accepted" },
+            { label: "Forge Suggestions", value: "12", change: "8 accepted" },
 ];
 
 const FALLBACK_PLANS = [
@@ -56,7 +56,7 @@ export default function DashboardPage() {
             { label: "Active Plans", value: String(active), change: `${plans.length} total plans` },
             { label: "Revenue Projects", value: "$2.4M", change: "Avg across plans" },
             { label: "Compliance Score", value: "87%", change: "+5% from last check" },
-            { label: "AI Suggestions", value: "12", change: "8 accepted" },
+  { label: "Forge Suggestions", value: "12", change: "8 accepted" },
           ]);
         }
       })
@@ -79,7 +79,7 @@ export default function DashboardPage() {
               <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"> Empire</span>
             </h1>
             <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto">
-              AI-powered business planning, financial modeling, compliance checks, and market research — all in one command center.
+              Forge-powered business planning, financial modeling, compliance checks, and market research — all in one command center.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link href="/plans/new" className="w-full sm:w-auto">
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                 <Link href="/ai-sandbox">
                   <div className="rounded-lg border border-white/10 bg-black/30 p-4 text-center transition-all hover:border-purple-500/50 hover:bg-purple-900/20 cursor-pointer">
                     <svg className="mx-auto mb-2 h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                    <p className="text-xs font-medium text-gray-300">AI Sandbox</p>
+                    <p className="text-xs font-medium text-gray-300">Forge</p>
                   </div>
                 </Link>
                 <Link href="/compliance">

@@ -308,8 +308,8 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>AI Suggestions</CardTitle>
-                <p className="text-sm text-gray-500">Explainable AI recommendations with confidence scores</p>
+                <CardTitle>Forge Suggestions</CardTitle>
+                <p className="text-sm text-gray-500">AI recommendations with confidence scores</p>
               </div>
               <Button variant="primary" size="sm" onClick={() => {
                 setAiSuggestions((prev) => [...prev, {
@@ -317,7 +317,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
                 }]);
                 showToast("New AI suggestion generated", "success");
               }}>Generate More</Button>
-            </div>
+              </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

@@ -35,7 +35,7 @@ export default function NewPlanPage() {
   const handleCreate = async () => {
     if (!title || !industry || !regionId) return;
     setLoading(true);
-    showToast("Creating business plan...", "info");
+    showToast("Forge is generating your business plan...", "info");
 
     try {
       const response = await fetch("/api/plans", {
@@ -44,11 +44,20 @@ export default function NewPlanPage() {
         body: JSON.stringify({ title, description, industry, region: regionId }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        showToast(data.error || "Failed to create plan", "error");
+        setLoading(false);
+        return;
+      }
       if (data.plan) {
+        showToast("Business plan created successfully!", "success");
         router.push(`/plans/${data.plan.id}`);
+      } else {
+        showToast("Failed to create plan. Please try again.", "error");
       }
     } catch (err) {
       console.error("Failed to create plan:", err);
+      showToast("Network error. Please check your connection and try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -63,7 +72,7 @@ export default function NewPlanPage() {
       )}
       <div>
         <h1 className="text-2xl font-bold text-gray-100">Create New Business Plan</h1>
-        <p className="text-sm text-gray-400">Set up your plan with regional context for AI-powered insights</p>
+        <p className="text-sm text-gray-400">Set up your plan with regional context for Forge-powered insights</p>
       </div>
 
       <Card variant="bordered">

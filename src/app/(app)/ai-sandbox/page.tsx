@@ -56,7 +56,7 @@ export default function AISandboxPage() {
         <div className="fixed right-4 top-4 z-50 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg">{toast}</div>
       )}
       <div>
-        <h1 className="text-2xl font-bold text-gray-100">AI Sandbox</h1>
+        <h1 className="text-2xl font-bold text-gray-100">Forge</h1>
         <p className="text-sm text-gray-400">AI-powered creativity and predictive foresight</p>
       </div>
 
