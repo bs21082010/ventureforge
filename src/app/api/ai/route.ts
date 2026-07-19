@@ -13,6 +13,7 @@ import {
   generateAISectionDraft,
 } from "@/lib/ai/workflow";
 import { getModel, chatCompletion, isApiKeySet, checkOllama } from "@/lib/ai/openai-client";
+import { isGeminiSet, geminiChat } from "@/lib/ai/gemini-client";
 import type {
   CreativityRequest,
   ForesightRequest,
@@ -75,6 +76,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "chat") {
+      // Try Gemini first (1M tokens/day free)
+      if (isGeminiSet()) {
+        try {
+          const history = (body.history || []).map((m: { role: string; content: string }) => ({
+            role: m.role === "assistant" ? "model" as const : "user" as const,
+            parts: m.content,
+          }));
+          const result = await geminiChat(body.message || "", CHAT_SYSTEM_PROMPT, history);
+          return NextResponse.json({ response: result });
+        } catch (err) {
+          console.error("Gemini chat failed, trying fallback:", err);
+        }
+      }
+      // Fallback to Ollama/OpenAI
       const hasAI = isApiKeySet() || await checkOllama();
       if (hasAI) {
         try {
@@ -91,7 +106,7 @@ export async function POST(request: NextRequest) {
           const result = await chatCompletion(model, CHAT_SYSTEM_PROMPT, messages.map(m => m.content).join("\n"), { temperature: 0.7, maxTokens: 2048 });
           return NextResponse.json({ response: result });
         } catch (err) {
-          console.error("AI chat failed, using template:", err);
+          console.error("Ollama/OpenAI chat failed, using template:", err);
         }
       }
       // Template fallback for chat - answers ANY question freely
@@ -160,6 +175,24 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "creativity") {
+      const hasAI = isGeminiSet() || isApiKeySet() || await checkOllama();
+      if (hasAI) {
+        try {
+          const result = await generateMarketingIdeas({
+            planId: body.planId || "",
+            type: body.type || "MARKETING",
+            context: body.context || body.industry || "Technology",
+            targetAudience: body.targetAudience || "",
+            tone: body.tone || "professional",
+            constraints: body.constraints,
+            followUp: body.followUp || undefined,
+          });
+          return NextResponse.json(result);
+        } catch (err) {
+          console.error("Creativity AI failed, using local:", err);
+        }
+      }
+      // Local fallback
       const result = await generateMarketingIdeas({
         planId: body.planId || "",
         type: body.type || "MARKETING",
@@ -189,7 +222,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: isVisionError
-          ? "The AI model is not available. Try setting OPENAI_API_KEY or ensuring Ollama is running with a compatible model (ollama pull llama3.2)."
+          ? "The AI model is not available. Set GEMINI_API_KEY (free, 1M tokens/day at aistudio.google.com/apikey), or ensure Ollama is running locally."
           : message,
         fallback: true,
       },
