@@ -40,11 +40,18 @@ export async function generateMarketingIdeas(
       const typeConfig = TYPE_PROMPTS[request.type] || TYPE_PROMPTS.MARKETING;
 
       const systemPrompt = typeConfig.system;
-      const userPrompt = typeConfig.user(
-        request.context,
-        request.targetAudience || "",
-        request.tone || "professional"
-      );
+      let userPrompt: string;
+
+      if (request.followUp) {
+        // Follow-up: clean, focused prompt
+        userPrompt = `Business: ${request.context}\nType: ${request.type.replace(/_/g, " ")}\nTarget: ${request.targetAudience || "general audience"}\n\nThe user asks: ${request.followUp}\n\nGive 3-4 SHORT, SPECIFIC ideas answering this exact question. Each idea: 2-3 sentences max. Return JSON only.`;
+      } else {
+        userPrompt = typeConfig.user(
+          request.context,
+          request.targetAudience || "",
+          request.tone || "professional"
+        );
+      }
 
       const result = await chatCompletion(model, systemPrompt, userPrompt, {
         temperature: 0.85,

@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         targetAudience: body.targetAudience || "",
         tone: body.tone || "professional",
         constraints: body.constraints,
+        followUp: body.followUp || undefined,
       });
       return NextResponse.json(result);
     }

@@ -53,6 +53,7 @@ export interface CreativityRequest {
   constraints?: string[];
   tone?: string;
   targetAudience?: string;
+  followUp?: string;
 }
 
 export interface CreativityResult {

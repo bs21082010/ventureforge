@@ -91,6 +91,7 @@ export function CreativityWorkspace() {
     setChat([]);
     setError(null);
     setActiveView("ideas");
+    setFollowUp("");
   };
 
   const handleGenerate = async () => {
@@ -115,7 +116,7 @@ export function CreativityWorkspace() {
       }
       const assistantMsg: ChatMessage = {
         role: "assistant",
-        content: `Here are ${request.type.replace(/_/g, " ").toLowerCase()} ideas for your business:`,
+        content: "",
         type: request.type,
         ideas: data.ideas || [],
         taglines: data.taglines || [],
@@ -146,8 +147,11 @@ export function CreativityWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "creativity",
-          ...request,
-          context: `${request.context}\n\nPrevious response included: ${chat.filter(m => m.role === "assistant").map(m => m.ideas?.map(i => i.title).join(", ")).join("; ")}\n\nUser follow-up: ${question}\n\nGenerate DIFFERENT ideas that specifically answer this follow-up. Do NOT repeat previous ideas. Return 3-4 new targeted ideas.`,
+          type: request.type,
+          context: request.context,
+          targetAudience: request.targetAudience,
+          tone: request.tone,
+          followUp: question,
         }),
       });
       const data = await response.json();
@@ -156,7 +160,7 @@ export function CreativityWorkspace() {
       } else {
         setChat((prev) => [...prev, {
           role: "assistant",
-          content: `Here's my response to: "${question}"`,
+          content: "",
           type: request.type,
           ideas: data.ideas || [],
           taglines: data.taglines || [],
@@ -254,7 +258,7 @@ export function CreativityWorkspace() {
                     <Badge variant="default" size="sm">{msg.type.replace(/_/g, " ")}</Badge>
                     <span className="text-[10px] text-gray-500">{msg.role === "user" ? "You" : "AI"}</span>
                   </div>
-                  <p className="text-sm text-gray-300">{msg.content}</p>
+                  {msg.content && <p className="text-sm text-gray-300">{msg.content}</p>}
                 </div>
               ))}
               {loading && (
