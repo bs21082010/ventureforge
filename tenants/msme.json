@@ -1,0 +1,64 @@
+{
+  "id": "msme-ministry",
+  "name": "Ministry of MSME",
+  "slug": "msme",
+  "type": "government",
+  "branding": {
+    "name": "MSME Business Planner",
+    "tagline": "Government of India - MSME Development Platform",
+    "logoUrl": "/tenants/msme/logo.svg",
+    "faviconUrl": "/tenants/msme/favicon.ico",
+    "primaryColor": "#f59e0b",
+    "secondaryColor": "#d97706",
+    "accentColor": "#fbbf24",
+    "background": "#1a1508",
+    "surface": "#12100a",
+    "foreground": "#fef3c7",
+    "muted": "#8b7b5b"
+  },
+  "features": {
+    "financialEngine": true,
+    "dataBackbone": true,
+    "aiSandbox": true,
+    "compliance": true,
+    "studio": false,
+    "collaborative": true,
+    "pricing": false,
+    "customModules": ["msme-registration", "subsidy-calculator", "udyam-portal"]
+  },
+  "compliance": {
+    "jurisdiction": "India",
+    "regulations": ["msme-act", "companies-act", "gst", "labour-laws", "environmental"],
+    "customRules": [
+      {
+        "id": "gov-001",
+        "name": "MSME Classification",
+        "category": "BUSINESS_REGISTRATION",
+        "requirement": "Enterprise must qualify as MSME under section 2 of MSMED Act 2006",
+        "severity": "CRITICAL"
+      },
+      {
+        "id": "gov-002",
+        "name": "Udyam Registration",
+        "category": "BUSINESS_REGISTRATION",
+        "requirement": "Must have valid Udyam Registration Number",
+        "severity": "HIGH"
+      },
+      {
+        "id": "gov-003",
+        "name": "Subsidy Eligibility",
+        "category": "FINANCIAL",
+        "requirement": "Plans must demonstrate eligibility for government subsidies",
+        "severity": "MEDIUM"
+      }
+    ]
+  },
+  "deployment": {
+    "domain": "msme.gov.in",
+    "subdomain": "planner",
+    "linuxPath": "/opt/msme-planner",
+    "port": 3004
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

@@ -1,0 +1,50 @@
+{
+  "id": "acme-corp",
+  "name": "Acme Corp",
+  "slug": "acme",
+  "type": "company",
+  "branding": {
+    "name": "Acme Forge",
+    "tagline": "Enterprise Business Planning",
+    "logoUrl": "/tenants/acme/logo.svg",
+    "faviconUrl": "/tenants/acme/favicon.ico",
+    "primaryColor": "#dc2626",
+    "secondaryColor": "#b91c1c",
+    "accentColor": "#ef4444",
+    "background": "#1a0a0a",
+    "surface": "#120808",
+    "foreground": "#fce4ec",
+    "muted": "#8b6b6b"
+  },
+  "features": {
+    "financialEngine": true,
+    "dataBackbone": true,
+    "aiSandbox": true,
+    "compliance": true,
+    "studio": true,
+    "collaborative": true,
+    "pricing": true,
+    "customModules": ["crm-integration", "erp-sync"]
+  },
+  "compliance": {
+    "jurisdiction": "USA",
+    "regulations": ["sec-filing", "sox-compliance", "ccpa"],
+    "customRules": [
+      {
+        "id": "corp-001",
+        "name": "Internal Audit Trail",
+        "category": "FINANCIAL",
+        "requirement": "All financial projections must maintain audit trail",
+        "severity": "CRITICAL"
+      }
+    ]
+  },
+  "deployment": {
+    "domain": "acme-corp.com",
+    "subdomain": "planning",
+    "linuxPath": "/opt/acme-planning",
+    "port": 3002
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

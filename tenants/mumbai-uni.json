@@ -1,0 +1,57 @@
+{
+  "id": "mumbai-university",
+  "name": "Mumbai University",
+  "slug": "mumbai-uni",
+  "type": "institution",
+  "branding": {
+    "name": "MU Venture Hub",
+    "tagline": "Innovation & Entrepreneurship Platform",
+    "logoUrl": "/tenants/mumbai-uni/logo.svg",
+    "faviconUrl": "/tenants/mumbai-uni/favicon.ico",
+    "primaryColor": "#7c3aed",
+    "secondaryColor": "#6d28d9",
+    "accentColor": "#a78bfa",
+    "background": "#0f0a1a",
+    "surface": "#0a0812",
+    "foreground": "#ede9f6",
+    "muted": "#7b6b8e"
+  },
+  "features": {
+    "financialEngine": true,
+    "dataBackbone": true,
+    "aiSandbox": true,
+    "compliance": true,
+    "studio": true,
+    "collaborative": true,
+    "pricing": false,
+    "customModules": ["research-papers", "incubator-tracking", "investor-network"]
+  },
+  "compliance": {
+    "jurisdiction": "India",
+    "regulations": ["ugc-guidelines", "companies-act", "gst"],
+    "customRules": [
+      {
+        "id": "uni-001",
+        "name": "Research Compliance",
+        "category": "EDUCATION",
+        "requirement": "Research-based business plans must cite academic sources",
+        "severity": "MEDIUM"
+      },
+      {
+        "id": "uni-002",
+        "name": "Incubator Standards",
+        "category": "BUSINESS_REGISTRATION",
+        "requirement": "Plans must demonstrate market viability for incubator funding",
+        "severity": "HIGH"
+      }
+    ]
+  },
+  "deployment": {
+    "domain": "mu.ac.in",
+    "subdomain": "venturehub",
+    "linuxPath": "/opt/mu-venturehub",
+    "port": 3003
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

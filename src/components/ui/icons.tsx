@@ -201,6 +201,16 @@ export function DollarSignIcon({ className = "w-5 h-5", size }: IconProps) {
   );
 }
 
+export function SparklesIcon({ className = "w-5 h-5", size }: IconProps) {
+  const s = size || 24;
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z" />
+      <path d="M18 14l1 2.5L22 18l-3 1-1 3-1-3-3-1 3-1z" />
+    </svg>
+  );
+}
+
 export function FileTextIcon({ className = "w-5 h-5", size }: IconProps) {
   const s = size || 24;
   return (

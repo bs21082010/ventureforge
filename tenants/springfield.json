@@ -1,0 +1,50 @@
+{
+  "id": "springfield-school",
+  "name": "Springfield Academy",
+  "slug": "springfield",
+  "type": "school",
+  "branding": {
+    "name": "Springfield Academy",
+    "tagline": "Student Business Planning Platform",
+    "logoUrl": "/tenants/springfield/logo.svg",
+    "faviconUrl": "/tenants/springfield/favicon.ico",
+    "primaryColor": "#16a34a",
+    "secondaryColor": "#15803d",
+    "accentColor": "#22c55e",
+    "background": "#0f1a0f",
+    "surface": "#0a120a",
+    "foreground": "#e8f5e9",
+    "muted": "#6b8e6b"
+  },
+  "features": {
+    "financialEngine": true,
+    "dataBackbone": true,
+    "aiSandbox": true,
+    "compliance": true,
+    "studio": true,
+    "collaborative": true,
+    "pricing": false,
+    "customModules": ["student-projects", "grade-tracking"]
+  },
+  "compliance": {
+    "jurisdiction": "India",
+    "regulations": ["education-act", "gst", " labour-laws"],
+    "customRules": [
+      {
+        "id": "edu-001",
+        "name": "Student Project Guidelines",
+        "category": "EDUCATION",
+        "requirement": "All student business plans must include educational objectives",
+        "severity": "HIGH"
+      }
+    ]
+  },
+  "deployment": {
+    "domain": "springfield.edu",
+    "subdomain": "planner",
+    "linuxPath": "/opt/springfield-planner",
+    "port": 3001
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
